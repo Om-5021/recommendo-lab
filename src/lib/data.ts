@@ -1,4 +1,3 @@
-
 export interface Course {
   id: string;
   title: string;
@@ -12,6 +11,7 @@ export interface Course {
   enrollments: number;
   tags: string[];
   preview?: string;
+  created_at: string;
 }
 
 export interface UserProgress {
@@ -38,7 +38,8 @@ export const mockCourses: Course[] = [
     rating: 4.8,
     enrollments: 15420,
     tags: ['Machine Learning', 'Python', 'Data Science', 'AI'],
-    preview: 'https://images.unsplash.com/photo-1581092921461-fd3e4b315b8a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1400&q=80'
+    preview: 'https://images.unsplash.com/photo-1581092921461-fd3e4b315b8a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1400&q=80',
+    created_at: new Date().toISOString()
   },
   {
     id: 'c002',
@@ -51,7 +52,8 @@ export const mockCourses: Course[] = [
     category: 'Web Development',
     rating: 4.9,
     enrollments: 8745,
-    tags: ['React', 'JavaScript', 'Frontend', 'Web Development']
+    tags: ['React', 'JavaScript', 'Frontend', 'Web Development'],
+    created_at: new Date().toISOString()
   },
   {
     id: 'c003',
@@ -64,7 +66,8 @@ export const mockCourses: Course[] = [
     category: 'Computer Science',
     rating: 4.7,
     enrollments: 12350,
-    tags: ['Algorithms', 'Data Structures', 'Computer Science', 'Programming']
+    tags: ['Algorithms', 'Data Structures', 'Computer Science', 'Programming'],
+    created_at: new Date().toISOString()
   },
   {
     id: 'c004',
@@ -77,7 +80,8 @@ export const mockCourses: Course[] = [
     category: 'Design',
     rating: 4.9,
     enrollments: 9870,
-    tags: ['UI', 'UX', 'Design', 'Figma', 'Adobe XD']
+    tags: ['UI', 'UX', 'Design', 'Figma', 'Adobe XD'],
+    created_at: new Date().toISOString()
   },
   {
     id: 'c005',
@@ -90,7 +94,8 @@ export const mockCourses: Course[] = [
     category: 'Cloud Computing',
     rating: 4.8,
     enrollments: 7450,
-    tags: ['AWS', 'Cloud', 'DevOps', 'Infrastructure']
+    tags: ['AWS', 'Cloud', 'DevOps', 'Infrastructure'],
+    created_at: new Date().toISOString()
   },
   {
     id: 'c006',
@@ -103,7 +108,8 @@ export const mockCourses: Course[] = [
     category: 'Artificial Intelligence',
     rating: 4.7,
     enrollments: 6320,
-    tags: ['NLP', 'AI', 'Machine Learning', 'Python', 'NLTK']
+    tags: ['NLP', 'AI', 'Machine Learning', 'Python', 'NLTK'],
+    created_at: new Date().toISOString()
   }
 ];
 

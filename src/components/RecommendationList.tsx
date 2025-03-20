@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import CourseCard from './CourseCard';
-import { Course } from '@/lib/data';
+import { Course } from '@/types/database';
 
 interface RecommendationListProps {
   title: string;

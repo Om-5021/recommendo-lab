@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import CourseCard from '@/components/CourseCard';
 import ProgressChart from '@/components/ProgressChart';
 import { getInProgressCourses, mockProgressStats, getRecommendedCourses } from '@/lib/data';
+import { Course } from '@/types/database';
 
 const Dashboard = () => {
   // Smooth load animation
@@ -122,7 +123,7 @@ const Dashboard = () => {
                   {inProgressCourses.map((course, index) => (
                     <CourseCard 
                       key={course.id} 
-                      course={course} 
+                      course={course as Course} 
                       progress={course.progress}
                     />
                   ))}
@@ -145,7 +146,7 @@ const Dashboard = () => {
                 
                 <div className="space-y-5">
                   {recommendedCourses.map((course) => (
-                    <CourseCard key={course.id} course={course} />
+                    <CourseCard key={course.id} course={course as Course} />
                   ))}
                 </div>
                 
