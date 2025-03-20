@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Loader2 } from 'lucide-react';
+import { Search, Filter, Loader2, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -24,6 +24,7 @@ import Navbar from '@/components/Navbar';
 import { mockCategories } from '@/lib/data';
 import { supabase } from '@/integrations/supabase/client';
 import { Course } from '@/types/database';
+import { Link } from 'react-router-dom';
 
 const CoursesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,10 +97,21 @@ const CoursesPage = () => {
       <main className="pt-24 pb-20">
         <div className="container px-4 mx-auto">
           <div className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Explore Courses</h1>
-            <p className="text-muted-foreground text-lg">
-              Browse through our catalog of professionally curated courses
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-4">Explore Courses</h1>
+                <p className="text-muted-foreground text-lg">
+                  Browse through our catalog of professionally curated courses
+                </p>
+              </div>
+              
+              <Button asChild variant="outline" size="lg" className="flex items-center">
+                <Link to="/learning-paths">
+                  <BookOpen className="mr-2 h-5 w-5" />
+                  Explore Learning Paths
+                </Link>
+              </Button>
+            </div>
           </div>
           
           {/* Search and Filters */}

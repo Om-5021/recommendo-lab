@@ -98,6 +98,104 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_path_steps: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          learning_path_id: string
+          step_order: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          learning_path_id: string
+          step_order: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          learning_path_id?: string
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_path_steps_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_path_steps_learning_path_id_fkey"
+            columns: ["learning_path_id"]
+            isOneToOne: false
+            referencedRelation: "learning_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_paths: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_learning_paths: {
+        Row: {
+          created_at: string
+          id: string
+          learning_path_id: string
+          progress: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          learning_path_id: string
+          progress?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          learning_path_id?: string
+          progress?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_learning_paths_learning_path_id_fkey"
+            columns: ["learning_path_id"]
+            isOneToOne: false
+            referencedRelation: "learning_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
