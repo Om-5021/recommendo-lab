@@ -27,8 +27,8 @@ import { Course } from '@/types/database';
 
 const CoursesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [levelFilter, setLevelFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [levelFilter, setLevelFilter] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,8 +71,8 @@ const CoursesPage = () => {
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesCategory = categoryFilter === '' || course.category === categoryFilter;
-    const matchesLevel = levelFilter === '' || course.level === levelFilter;
+    const matchesCategory = categoryFilter === 'all' || course.category === categoryFilter;
+    const matchesLevel = levelFilter === 'all' || course.level === levelFilter;
     
     return matchesSearch && matchesCategory && matchesLevel;
   });
@@ -123,7 +123,7 @@ const CoursesPage = () => {
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {mockCategories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -138,7 +138,7 @@ const CoursesPage = () => {
                   <SelectValue placeholder="Level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Levels</SelectItem>
+                  <SelectItem value="all">All Levels</SelectItem>
                   <SelectItem value="Beginner">Beginner</SelectItem>
                   <SelectItem value="Intermediate">Intermediate</SelectItem>
                   <SelectItem value="Advanced">Advanced</SelectItem>
@@ -193,8 +193,8 @@ const CoursesPage = () => {
                 className="mt-4"
                 onClick={() => {
                   setSearchQuery('');
-                  setCategoryFilter('');
-                  setLevelFilter('');
+                  setCategoryFilter('all');
+                  setLevelFilter('all');
                 }}
               >
                 Clear Filters
