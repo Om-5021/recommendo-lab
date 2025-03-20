@@ -1,12 +1,152 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useEffect } from 'react';
+import Navbar from '@/components/Navbar';
+import Hero from '@/components/Hero';
+import RecommendationList from '@/components/RecommendationList';
+import { getRecommendedCourses, getPopularCourses, mockCategories } from '@/lib/data';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const Index = () => {
+  // Smooth load animation
+  useEffect(() => {
+    document.body.classList.add('page-transition');
+    return () => {
+      document.body.classList.remove('page-transition');
+    };
+  }, []);
+
+  const recommendedCourses = getRecommendedCourses();
+  const popularCourses = getPopularCourses();
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <main>
+        <Hero />
+        
+        <RecommendationList
+          title="Recommended for You"
+          subtitle="Based on your interests and learning history"
+          courses={recommendedCourses}
+        />
+        
+        <RecommendationList
+          title="Most Popular Courses"
+          subtitle="Join thousands of learners exploring these courses"
+          courses={popularCourses}
+          className="bg-blue-50/50"
+        />
+        
+        {/* Categories Section */}
+        <section className="py-20">
+          <div className="container px-4 mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">Explore Categories</h2>
+            <p className="text-muted-foreground text-center mb-12">Discover courses from various fields of study</p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {mockCategories.map((category, index) => (
+                <CategoryCard 
+                  key={category} 
+                  category={category} 
+                  index={index}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+        
+        {/* CTA Section */}
+        <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+          <div className="container px-4 mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Learning?</h2>
+            <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+              Join thousands of learners advancing their careers with our AI-powered recommendations
+            </p>
+            <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+              Get Started Now
+            </Button>
+          </div>
+        </section>
+      </main>
+      
+      {/* Footer */}
+      <footer className="bg-gray-50 py-12">
+        <div className="container px-4 mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="font-bold text-xl mb-4 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                Recommendo
+              </h3>
+              <p className="text-muted-foreground">
+                The AI-powered learning platform that adapts to your unique educational journey
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Platform</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Browse Courses</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Pricing</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">For Teams</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Become an Instructor</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Help Center</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Blog</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Documentation</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">API Reference</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">About Us</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Careers</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="pt-8 mt-8 border-t border-gray-200 text-center text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} Recommendo AI Learning Platform. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+interface CategoryCardProps {
+  category: string;
+  index: number;
+}
+
+const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
+  // Different animation delays based on index for staggered animation
+  const animationDelay = `${0.1 + (index * 0.05)}s`;
+  
+  return (
+    <div 
+      className="animate-fade-up" 
+      style={{ animationDelay }}
+    >
+      <Button 
+        variant="outline" 
+        className={cn(
+          "w-full h-24 text-lg justify-center bg-white/80 backdrop-blur-sm hover:bg-white",
+          "border-blue-100 shadow-sm transition-all-300 hover:shadow-md hover:-translate-y-1"
+        )}
+      >
+        {category}
+      </Button>
     </div>
   );
 };
