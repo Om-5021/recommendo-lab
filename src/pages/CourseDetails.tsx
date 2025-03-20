@@ -1,22 +1,99 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Clock, Users, Star, BookOpen, Play, BarChart, CheckCircle, Calendar, ChevronRight, Award } from 'lucide-react';
+import { Clock, Users, Star, BookOpen, Play, BarChart, CheckCircle, Calendar, ChevronRight, Award, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/components/ui/use-toast';
 import Navbar from '@/components/Navbar';
-import { getCourseById, getRecommendedCourses } from '@/lib/data';
-import CourseCard from '@/components/CourseCard';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import CourseVideos from '@/components/CourseVideos';
+import VideoPlayer from '@/components/VideoPlayer';
+import { Course, CourseVideo } from '@/types/database';
 
 const CourseDetails = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const [course, setCourse] = useState(getCourseById(courseId || ''));
+  const [course, setCourse] = useState<Course | null>(null);
+  const [similarCourses, setSimilarCourses] = useState<Course[]>([]);
+  const [loadingCourse, setLoadingCourse] = useState(true);
+  const [loadingSimilar, setLoadingSimilar] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const similarCourses = getRecommendedCourses().filter(c => c.id !== courseId);
+  const [selectedVideo, setSelectedVideo] = useState<CourseVideo | null>(null);
+  const { toast } = useToast();
+
+  // Fetch course details
+  useEffect(() => {
+    const fetchCourse = async () => {
+      if (!courseId) return;
+      
+      try {
+        setLoadingCourse(true);
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('id', courseId)
+          .maybeSingle();
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setCourse(data as Course);
+        } else {
+          setCourse(null);
+        }
+      } catch (error) {
+        console.error('Error fetching course:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load course details. Please try again later.',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoadingCourse(false);
+      }
+    };
+    
+    fetchCourse();
+  }, [courseId, toast]);
+  
+  // Fetch similar courses
+  useEffect(() => {
+    const fetchSimilarCourses = async () => {
+      if (!course) return;
+      
+      try {
+        setLoadingSimilar(true);
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('category', course.category)
+          .neq('id', course.id)
+          .limit(2);
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setSimilarCourses(data as Course[]);
+        }
+      } catch (error) {
+        console.error('Error fetching similar courses:', error);
+      } finally {
+        setLoadingSimilar(false);
+      }
+    };
+    
+    if (course) {
+      fetchSimilarCourses();
+    }
+  }, [course]);
 
   // Smooth load animation
   useEffect(() => {
@@ -25,6 +102,24 @@ const CourseDetails = () => {
       document.body.classList.remove('page-transition');
     };
   }, []);
+  
+  const handleSelectVideo = (video: CourseVideo) => {
+    setSelectedVideo(video);
+  };
+
+  // If loading
+  if (loadingCourse) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container px-4 mx-auto pt-32 text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Loading Course</h1>
+          <p className="text-muted-foreground">Please wait while we load the course details</p>
+        </div>
+      </div>
+    );
+  }
 
   // If course is not found
   if (!course) {
@@ -51,33 +146,37 @@ const CourseDetails = () => {
         <div className="bg-gradient-to-b from-blue-50 to-transparent">
           <div className="container px-4 mx-auto py-10">
             <div className="flex flex-col md:flex-row gap-8">
-              {/* Course Image */}
+              {/* Course Image or Video Player */}
               <div className="md:w-2/5 lg:w-1/3 animate-fade-up">
-                <div 
-                  className={cn(
-                    "aspect-video w-full rounded-xl overflow-hidden shadow-lg relative",
-                    "before:absolute before:inset-0 before:bg-blue-500/10"
-                  )}
-                >
-                  <img 
-                    src={course.preview || course.thumbnail}
-                    alt={course.title}
+                {selectedVideo ? (
+                  <VideoPlayer video={selectedVideo} />
+                ) : (
+                  <div 
                     className={cn(
-                      "w-full h-full object-cover transition-opacity duration-300",
-                      imageLoaded ? "opacity-100" : "opacity-0"
+                      "aspect-video w-full rounded-xl overflow-hidden shadow-lg relative",
+                      "before:absolute before:inset-0 before:bg-blue-500/10"
                     )}
-                    onLoad={() => setImageLoaded(true)}
-                  />
-                  
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Button 
-                      size="icon" 
-                      className="h-16 w-16 rounded-full bg-white/90 hover:bg-white shadow-lg hover:scale-105 transition-all"
-                    >
-                      <Play className="h-8 w-8 text-primary fill-primary" />
-                    </Button>
+                  >
+                    <img 
+                      src={course.preview || course.thumbnail}
+                      alt={course.title}
+                      className={cn(
+                        "w-full h-full object-cover transition-opacity duration-300",
+                        imageLoaded ? "opacity-100" : "opacity-0"
+                      )}
+                      onLoad={() => setImageLoaded(true)}
+                    />
+                    
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Button 
+                        size="icon" 
+                        className="h-16 w-16 rounded-full bg-white/90 hover:bg-white shadow-lg hover:scale-105 transition-all"
+                      >
+                        <Play className="h-8 w-8 text-primary fill-primary" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               
               {/* Course Info */}
@@ -110,7 +209,7 @@ const CourseDetails = () => {
                   </div>
                   <div className="flex items-center">
                     <BookOpen className="h-5 w-5 text-muted-foreground mr-2" />
-                    <span>Last updated 2 months ago</span>
+                    <span>Last updated {new Date(course.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
                 
@@ -138,7 +237,7 @@ const CourseDetails = () => {
         
         {/* Course Content */}
         <div className="container px-4 mx-auto py-12">
-          <Tabs defaultValue="overview" className="space-y-8">
+          <Tabs defaultValue="curriculum" className="space-y-8">
             <div className="sticky top-16 z-20 bg-background/80 backdrop-blur-sm py-2">
               <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0 space-x-8">
                 <TabsTrigger 
@@ -226,87 +325,10 @@ const CourseDetails = () => {
                 </TabsContent>
                 
                 <TabsContent value="curriculum" className="m-0">
-                  <div className="space-y-6">
-                    <section>
-                      <h2 className="text-2xl font-bold mb-4">Course Curriculum</h2>
-                      <p className="text-muted-foreground mb-6">
-                        This course includes 48 lectures organized into 8 sections, with a total of 12 hours of video content, practical exercises, and assessments.
-                      </p>
-                      
-                      {[
-                        {
-                          title: "Getting Started",
-                          lectures: 5,
-                          time: "45 min",
-                          items: [
-                            { title: "Introduction to the Course", type: "video", duration: "10:25" },
-                            { title: "Setting Up Your Environment", type: "video", duration: "12:40" },
-                            { title: "Understanding Basic Concepts", type: "video", duration: "15:30" },
-                            { title: "Quick Start Exercise", type: "exercise", duration: "20:00" },
-                            { title: "Section Quiz", type: "quiz", duration: "15:00" }
-                          ]
-                        },
-                        {
-                          title: "Core Principles",
-                          lectures: 7,
-                          time: "1h 20min",
-                          items: [
-                            { title: "Fundamental Principles Overview", type: "video", duration: "14:35" },
-                            { title: "Key Concepts Explained", type: "video", duration: "18:20" },
-                            { title: "Practical Application", type: "video", duration: "21:15" }
-                          ]
-                        },
-                        {
-                          title: "Advanced Techniques",
-                          lectures: 8,
-                          time: "2h 10min",
-                          expanded: false
-                        },
-                        {
-                          title: "Real-world Projects",
-                          lectures: 6,
-                          time: "3h 30min",
-                          expanded: false
-                        },
-                        {
-                          title: "Special Topics",
-                          lectures: 4,
-                          time: "1h 15min",
-                          expanded: false
-                        }
-                      ].map((section, index) => (
-                        <div key={index} className="mb-4">
-                          <div className="flex justify-between items-center py-3 px-4 bg-secondary rounded-t-lg">
-                            <h3 className="font-semibold">Section {index + 1}: {section.title}</h3>
-                            <div className="text-sm text-muted-foreground">
-                              {section.lectures} lectures • {section.time}
-                            </div>
-                          </div>
-                          
-                          {section.items && section.items.map((item, itemIndex) => (
-                            <div 
-                              key={itemIndex} 
-                              className="flex justify-between items-center py-3 px-4 border-b last:border-0 last:rounded-b-lg border-border bg-background hover:bg-secondary/50 transition-colors"
-                            >
-                              <div className="flex items-center">
-                                {item.type === 'video' && <Play className="h-4 w-4 mr-3 text-primary" />}
-                                {item.type === 'exercise' && <BookOpen className="h-4 w-4 mr-3 text-emerald-500" />}
-                                {item.type === 'quiz' && <BarChart className="h-4 w-4 mr-3 text-amber-500" />}
-                                <span>{item.title}</span>
-                              </div>
-                              <div className="text-sm text-muted-foreground">{item.duration}</div>
-                            </div>
-                          ))}
-                          
-                          {!section.items && (
-                            <div className="py-3 px-4 border-b border-border bg-background text-center text-muted-foreground rounded-b-lg">
-                              <ChevronRight className="h-5 w-5 inline-block" /> Click to expand
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </section>
-                  </div>
+                  <CourseVideos 
+                    courseId={course.id} 
+                    onSelectVideo={handleSelectVideo}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="reviews" className="m-0">
@@ -525,28 +547,34 @@ const CourseDetails = () => {
                   
                   <div>
                     <h3 className="font-semibold mb-3">Similar Courses</h3>
-                    <div className="space-y-3">
-                      {similarCourses.slice(0, 2).map(course => (
-                        <Link to={`/course/${course.id}`} key={course.id} className="group block">
-                          <div className="flex gap-3">
-                            <div className="w-16 h-16 rounded-md overflow-hidden shrink-0">
-                              <img 
-                                src={course.thumbnail} 
-                                alt={course.title} 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            </div>
-                            <div>
-                              <h4 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">{course.title}</h4>
-                              <div className="flex items-center mt-1">
-                                <Star className="h-3 w-3 text-amber-500 fill-amber-500 mr-1" />
-                                <span className="text-xs">{course.rating}</span>
+                    {loadingSimilar ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {similarCourses.map(course => (
+                          <Link to={`/course/${course.id}`} key={course.id} className="group block">
+                            <div className="flex gap-3">
+                              <div className="w-16 h-16 rounded-md overflow-hidden shrink-0">
+                                <img 
+                                  src={course.thumbnail} 
+                                  alt={course.title} 
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                              </div>
+                              <div>
+                                <h4 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">{course.title}</h4>
+                                <div className="flex items-center mt-1">
+                                  <Star className="h-3 w-3 text-amber-500 fill-amber-500 mr-1" />
+                                  <span className="text-xs">{course.rating}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

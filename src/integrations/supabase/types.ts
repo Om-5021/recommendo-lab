@@ -9,7 +9,95 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      course_videos: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string
+          duration: string
+          id: string
+          order_index: number
+          title: string
+          video_url: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description: string
+          duration: string
+          id?: string
+          order_index: number
+          title: string
+          video_url: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string
+          duration?: string
+          id?: string
+          order_index?: number
+          title?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_videos_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          duration: string
+          enrollments: number
+          id: string
+          instructor: string
+          level: string
+          preview: string | null
+          rating: number
+          tags: string[]
+          thumbnail: string
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          duration: string
+          enrollments?: number
+          id?: string
+          instructor: string
+          level: string
+          preview?: string | null
+          rating: number
+          tags?: string[]
+          thumbnail: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          duration?: string
+          enrollments?: number
+          id?: string
+          instructor?: string
+          level?: string
+          preview?: string | null
+          rating?: number
+          tags?: string[]
+          thumbnail?: string
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

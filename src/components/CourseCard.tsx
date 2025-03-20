@@ -1,19 +1,27 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Users, Star } from 'lucide-react';
+import { Clock, Users, Star, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Course } from '@/lib/data';
+import { Course as CourseType } from '@/types/database';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CourseCardProps {
-  course: Course;
+  course: CourseType;
   progress?: number;
   className?: string;
+  showVideoCount?: boolean;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ course, progress, className }) => {
+const CourseCard: React.FC<CourseCardProps> = ({ 
+  course, 
+  progress, 
+  className,
+  showVideoCount = true
+}) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [videoCount, setVideoCount] = useState(0);
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Check if image is already cached
@@ -22,6 +30,32 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, progress, className }) 
       setImageLoaded(true);
     }
   }, []);
+
+  // Fetch video count for this course
+  useEffect(() => {
+    const fetchVideoCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('course_videos')
+          .select('*', { count: 'exact', head: true })
+          .eq('course_id', course.id);
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (count !== null) {
+          setVideoCount(count);
+        }
+      } catch (error) {
+        console.error('Error fetching video count:', error);
+      }
+    };
+    
+    if (showVideoCount) {
+      fetchVideoCount();
+    }
+  }, [course.id, showVideoCount]);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -72,6 +106,11 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, progress, className }) 
             <Badge variant="secondary" className="text-xs font-normal">
               {course.category}
             </Badge>
+            {videoCount > 0 && (
+              <Badge variant="outline" className="text-xs font-normal flex items-center gap-1">
+                <Play className="h-3 w-3" /> {videoCount} videos
+              </Badge>
+            )}
           </div>
           
           <h3 className="text-lg font-semibold mb-2 line-clamp-2 text-balance">

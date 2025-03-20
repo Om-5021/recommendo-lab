@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Search, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -18,18 +18,55 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from '@/components/ui/pagination';
+import { useToast } from '@/components/ui/use-toast';
 import CourseCard from '@/components/CourseCard';
 import Navbar from '@/components/Navbar';
-import { mockCourses, mockCategories } from '@/lib/data';
+import { mockCategories } from '@/lib/data';
+import { supabase } from '@/integrations/supabase/client';
+import { Course } from '@/types/database';
 
 const CoursesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
   const [sortBy, setSortBy] = useState('popular');
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  
+  // Fetch courses from Supabase
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*');
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setCourses(data as Course[]);
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load courses. Please try again later.',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCourses();
+  }, [toast]);
   
   // Filter courses based on search and filters
-  const filteredCourses = mockCourses.filter(course => {
+  const filteredCourses = courses.filter(course => {
     const matchesSearch = searchQuery === '' || 
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -44,7 +81,11 @@ const CoursesPage = () => {
   const sortedCourses = [...filteredCourses].sort((a, b) => {
     if (sortBy === 'popular') return b.enrollments - a.enrollments;
     if (sortBy === 'rating') return b.rating - a.rating;
-    if (sortBy === 'newest') return 0; // In a real app, this would compare dates
+    if (sortBy === 'newest') {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return dateB.getTime() - dateA.getTime();
+    }
     return 0;
   });
 
@@ -124,8 +165,16 @@ const CoursesPage = () => {
             </div>
           </div>
           
+          {/* Loading state */}
+          {loading && (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2 text-lg">Loading courses...</span>
+            </div>
+          )}
+          
           {/* Course Grid */}
-          {sortedCourses.length > 0 ? (
+          {!loading && sortedCourses.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
               {sortedCourses.map((course) => (
                 <div key={course.id} className="animate-scale-in">
@@ -133,7 +182,7 @@ const CoursesPage = () => {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : !loading ? (
             <div className="text-center py-20">
               <h3 className="text-2xl font-semibold mb-2">No courses found</h3>
               <p className="text-muted-foreground">
@@ -151,32 +200,32 @@ const CoursesPage = () => {
                 Clear Filters
               </Button>
             </div>
-          )}
+          ) : null}
           
           {/* Pagination */}
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious href="#" />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#" isActive>1</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">2</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">3</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          {!loading && sortedCourses.length > 0 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious href="#" />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink href="#" isActive>1</PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink href="#">2</PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink href="#">3</PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext href="#" />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </main>
-      
-      {/* Footer can be added here */}
     </div>
   );
 };
