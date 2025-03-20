@@ -92,7 +92,7 @@ const Dashboard = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div className="p-2 rounded-md bg-background/80">{stat.icon}</div>
                   {stat.trendUp !== null && (
-                    <Badge variant={stat.trendUp ? "success" : "destructive"} className={stat.trendUp ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-red-100 text-red-700 hover:bg-red-100"}>
+                    <Badge variant={stat.trendUp ? "outline" : "destructive"} className={stat.trendUp ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-red-100 text-red-700 hover:bg-red-100"}>
                       <ChevronUp className={`h-3 w-3 mr-1 ${!stat.trendUp && "rotate-180"}`} />
                       {stat.trend}
                     </Badge>

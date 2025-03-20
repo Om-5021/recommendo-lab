@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Clock, Users, Star, BookOpen, Play, BarChart, CheckCircle, Calendar, ChevronRight } from 'lucide-react';
+import { Clock, Users, Star, BookOpen, Play, BarChart, CheckCircle, Calendar, ChevronRight, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
