@@ -6,13 +6,19 @@ import { useVideoPlayer } from '@/contexts/VideoPlayerContext';
 const VideoProgressBar: React.FC = () => {
   const { currentTime, duration, handleSeek } = useVideoPlayer();
 
+  const onValueChange = (values: number[]) => {
+    if (handleSeek) {
+      handleSeek(values);
+    }
+  };
+
   return (
     <Slider 
       value={[currentTime]} 
       min={0} 
       max={duration || 100}
       step={0.1}
-      onValueChange={handleSeek}
+      onValueChange={onValueChange}
       className="cursor-pointer"
     />
   );
