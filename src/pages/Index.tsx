@@ -4,11 +4,11 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import RecommendationList from '@/components/RecommendationList';
 import LearningPathsList from '@/components/LearningPathsList';
-import { getRecommendedCourses, getPopularCourses, mockCategories } from '@/lib/data';
+import { mockCategories } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { LearningPath } from '@/types/database';
+import { LearningPath, Course } from '@/types/database';
 
 const Index = () => {
   // Smooth load animation
@@ -19,28 +19,69 @@ const Index = () => {
     };
   }, []);
 
-  const recommendedCourses = getRecommendedCourses();
-  const popularCourses = getPopularCourses();
-
+  const [recommendedCourses, setRecommendedCourses] = useState<Course[]>([]);
+  const [popularCourses, setPopularCourses] = useState<Course[]>([]);
+  const [relatedCourses, setRelatedCourses] = useState<Course[]>([]);
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch learning paths
+  // Fetch all data
   useEffect(() => {
-    const fetchLearningPaths = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch popular courses (based on enrollments)
+        const { data: popularData, error: popularError } = await supabase
+          .from('courses')
+          .select('*')
+          .order('enrollments', { ascending: false })
+          .limit(4);
+        
+        if (popularError) throw popularError;
+        if (popularData) setPopularCourses(popularData as Course[]);
+        
+        // Fetch recommended courses (based on rating)
+        const { data: recommendedData, error: recommendedError } = await supabase
+          .from('courses')
+          .select('*')
+          .order('rating', { ascending: false })
+          .limit(4);
+        
+        if (recommendedError) throw recommendedError;
+        if (recommendedData) {
+          setRecommendedCourses(recommendedData as Course[]);
+          
+          // Generate related courses based on the first recommended course's category and tags
+          if (recommendedData.length > 0) {
+            const mainCourse = recommendedData[0];
+            const { data: relatedData, error: relatedError } = await supabase
+              .from('courses')
+              .select('*')
+              .neq('id', mainCourse.id)
+              .or(`category.eq.${mainCourse.category},tags.cs.{${mainCourse.tags.join(',')}}`)
+              .limit(4);
+            
+            if (relatedError) throw relatedError;
+            if (relatedData) setRelatedCourses(relatedData as Course[]);
+          }
+        }
+        
+        // Fetch learning paths
+        const { data: pathsData, error: pathsError } = await supabase
           .from('learning_paths')
           .select('*')
           .limit(3);
         
-        if (error) throw error;
-        if (data) setLearningPaths(data as LearningPath[]);
+        if (pathsError) throw pathsError;
+        if (pathsData) setLearningPaths(pathsData as LearningPath[]);
       } catch (error) {
-        console.error('Error fetching learning paths:', error);
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchLearningPaths();
+    fetchData();
   }, []);
 
   return (
@@ -52,15 +93,27 @@ const Index = () => {
         
         <RecommendationList
           title="Recommended for You"
-          subtitle="Based on your interests and learning history"
+          subtitle="Based on highest ratings across our platform"
           courses={recommendedCourses}
+          isLoading={isLoading}
         />
+        
+        {relatedCourses.length > 0 && (
+          <RecommendationList
+            title="Courses You Might Like"
+            subtitle="Based on your interests in similar topics"
+            courses={relatedCourses}
+            className="bg-blue-50/50"
+            isLoading={isLoading}
+          />
+        )}
         
         <RecommendationList
           title="Most Popular Courses"
           subtitle="Join thousands of learners exploring these courses"
           courses={popularCourses}
-          className="bg-blue-50/50"
+          className={relatedCourses.length > 0 ? "" : "bg-blue-50/50"}
+          isLoading={isLoading}
         />
         
         {learningPaths.length > 0 && (
@@ -68,6 +121,7 @@ const Index = () => {
             title="Recommended Learning Paths"
             subtitle="Structured paths to help you achieve your learning goals"
             learningPaths={learningPaths}
+            isLoading={isLoading}
           />
         )}
         
