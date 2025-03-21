@@ -161,6 +161,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_courses: {
+        Row: {
+          completed: boolean
+          course_id: string
+          id: string
+          last_watched_video: string | null
+          progress: number
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          course_id: string
+          id?: string
+          last_watched_video?: string | null
+          progress?: number
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          course_id?: string
+          id?: string
+          last_watched_video?: string | null
+          progress?: number
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_courses_last_watched_video_fkey"
+            columns: ["last_watched_video"]
+            isOneToOne: false
+            referencedRelation: "course_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_learning_paths: {
         Row: {
           created_at: string

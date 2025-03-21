@@ -1,4 +1,3 @@
-
 // Type definitions for database tables
 
 export interface Course {
@@ -58,4 +57,15 @@ export interface UserLearningPath {
   progress: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserCourse {
+  id: string;
+  user_id: string;
+  course_id: string;
+  progress: number;
+  last_watched_video: string | null;
+  started_at: string;
+  updated_at: string;
+  completed: boolean;
 }

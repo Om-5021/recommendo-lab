@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -6,15 +5,21 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CourseVideo } from '@/types/database';
+import { useUserProgress } from '@/contexts/UserProgressContext';
+import { useToast } from '@/components/ui/use-toast';
 
 interface VideoPlayerProps {
   video: CourseVideo;
+  courseId: string;
+  totalVideos?: number;
   className?: string;
   onEnded?: () => void;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
   video, 
+  courseId,
+  totalVideos = 1,
   className,
   onEnded
 }) => {
@@ -28,7 +33,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [progressTracked, setProgressTracked] = useState(false);
+  
   const controlsTimeoutRef = useRef<number | null>(null);
+  
+  const { session, updateCourseProgress } = useUserProgress();
+  const { toast } = useToast();
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -40,17 +50,46 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setCurrentTime(0);
     setDuration(0);
     setLoading(true);
+    setProgressTracked(false);
     
     const onLoadedMetadata = () => {
       setDuration(videoElement.duration);
     };
     
     const onTimeUpdate = () => {
-      setCurrentTime(videoElement.currentTime);
+      const newTime = videoElement.currentTime;
+      setCurrentTime(newTime);
+      
+      // Track progress at 25%, 50%, 75%, and 90% points of the video
+      if (session.userId && duration > 0) {
+        const percentage = Math.floor((newTime / duration) * 100);
+        
+        // Calculate the video's contribution to the overall course progress
+        const videoContribution = Math.floor(100 / totalVideos);
+        
+        // Track progress at specific milestones
+        if (!progressTracked && percentage >= 25) {
+          const videoProgress = Math.ceil(percentage / 100 * videoContribution);
+          updateCourseProgress(courseId, videoProgress, video.id);
+          setProgressTracked(true);
+        }
+      }
     };
     
     const onEnded = () => {
       setIsPlaying(false);
+      
+      // Update progress to 100% for this video
+      if (session.userId) {
+        const videoContribution = Math.floor(100 / totalVideos);
+        updateCourseProgress(courseId, videoContribution, video.id);
+        
+        toast({
+          title: "Video completed!",
+          description: "Your progress has been updated.",
+        });
+      }
+      
       if (onEnded) {
         onEnded();
       }
@@ -71,7 +110,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       videoElement.removeEventListener('ended', onEnded);
       videoElement.removeEventListener('loadeddata', onLoadedData);
     };
-  }, [video.video_url, onEnded]);
+  }, [video.video_url, onEnded, duration, session.userId, courseId, totalVideos, updateCourseProgress, video.id, toast, progressTracked]);
   
   const togglePlay = () => {
     if (!videoRef.current) return;

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Clock, Users, Star, BookOpen, Play, BarChart, CheckCircle, Calendar, ChevronRight, Award, Loader2 } from 'lucide-react';
@@ -9,11 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import Navbar from '@/components/Navbar';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import CourseVideos from '@/components/CourseVideos';
 import VideoPlayer from '@/components/VideoPlayer';
 import { Course, CourseVideo } from '@/types/database';
+import { useUserProgress } from '@/contexts/UserProgressContext';
 
 const CourseDetails = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -23,7 +23,13 @@ const CourseDetails = () => {
   const [loadingSimilar, setLoadingSimilar] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<CourseVideo | null>(null);
+  const [totalVideos, setTotalVideos] = useState(1);
   const { toast } = useToast();
+  const { session, userCourses, updateCourseProgress } = useUserProgress();
+
+  // Get user course progress
+  const userCourse = userCourses.find(uc => uc.course_id === courseId);
+  const courseProgress = userCourse?.progress || 0;
 
   // Fetch course details
   useEffect(() => {
@@ -62,6 +68,32 @@ const CourseDetails = () => {
     fetchCourse();
   }, [courseId, toast]);
   
+  // Fetch course videos to count them
+  useEffect(() => {
+    const fetchVideos = async () => {
+      if (!courseId) return;
+      
+      try {
+        const { data, error, count } = await supabase
+          .from('course_videos')
+          .select('*', { count: 'exact' })
+          .eq('course_id', courseId);
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (count) {
+          setTotalVideos(count);
+        }
+      } catch (error) {
+        console.error('Error fetching videos count:', error);
+      }
+    };
+    
+    fetchVideos();
+  }, [courseId]);
+  
   // Fetch similar courses
   useEffect(() => {
     const fetchSimilarCourses = async () => {
@@ -94,7 +126,7 @@ const CourseDetails = () => {
       fetchSimilarCourses();
     }
   }, [course]);
-
+  
   // Smooth load animation
   useEffect(() => {
     document.body.classList.add('page-transition');
@@ -105,6 +137,21 @@ const CourseDetails = () => {
   
   const handleSelectVideo = (video: CourseVideo) => {
     setSelectedVideo(video);
+    
+    // Create/update user course entry when starting a video
+    if (session.userId && !userCourse) {
+      updateCourseProgress(courseId!, 1, video.id);
+    }
+  };
+
+  const handleVideoEnded = () => {
+    // Update progress when video ends
+    if (session.userId) {
+      const newProgress = userCourse ? Math.min(userCourse.progress + Math.floor(100 / totalVideos), 100) : Math.floor(100 / totalVideos);
+      const isComplete = newProgress >= 100;
+      
+      updateCourseProgress(courseId!, newProgress, selectedVideo?.id, isComplete);
+    }
   };
 
   // If loading
@@ -149,7 +196,12 @@ const CourseDetails = () => {
               {/* Course Image or Video Player */}
               <div className="md:w-2/5 lg:w-1/3 animate-fade-up">
                 {selectedVideo ? (
-                  <VideoPlayer video={selectedVideo} />
+                  <VideoPlayer 
+                    video={selectedVideo} 
+                    courseId={courseId!}
+                    totalVideos={totalVideos}
+                    onEnded={handleVideoEnded}
+                  />
                 ) : (
                   <div 
                     className={cn(
@@ -158,8 +210,8 @@ const CourseDetails = () => {
                     )}
                   >
                     <img 
-                      src={course.preview || course.thumbnail}
-                      alt={course.title}
+                      src={course?.preview || course?.thumbnail}
+                      alt={course?.title}
                       className={cn(
                         "w-full h-full object-cover transition-opacity duration-300",
                         imageLoaded ? "opacity-100" : "opacity-0"
@@ -175,6 +227,19 @@ const CourseDetails = () => {
                         <Play className="h-8 w-8 text-primary fill-primary" />
                       </Button>
                     </div>
+                  </div>
+                )}
+
+                {/* Course Progress */}
+                {session.userId && course && (
+                  <div className="mt-4 p-4 glass-card rounded-xl">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-medium">Course Progress</h3>
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        {courseProgress}% Complete
+                      </Badge>
+                    </div>
+                    <Progress value={courseProgress} className="h-2" />
                   </div>
                 )}
               </div>
@@ -326,7 +391,7 @@ const CourseDetails = () => {
                 
                 <TabsContent value="curriculum" className="m-0">
                   <CourseVideos 
-                    courseId={course.id} 
+                    courseId={course?.id || ''} 
                     onSelectVideo={handleSelectVideo}
                   />
                 </TabsContent>
@@ -496,10 +561,67 @@ const CourseDetails = () => {
               <div className="animate-fade-up" style={{ animationDelay: "0.3s" }}>
                 <div className="glass-card rounded-xl p-6 space-y-6 sticky top-32">
                   <div className="text-center">
-                    <div className="text-3xl font-bold mb-2">Free</div>
-                    <p className="text-muted-foreground mb-6">Full access to this course</p>
-                    <Button className="w-full mb-3">Enroll Now</Button>
-                    <Button variant="outline" className="w-full">Add to Wishlist</Button>
+                    {userCourse ? (
+                      <>
+                        <div className="text-3xl font-bold mb-2">{courseProgress}%</div>
+                        <p className="text-muted-foreground mb-6">Course Completion</p>
+                        <Button 
+                          className="w-full mb-3" 
+                          onClick={() => {
+                            const video = selectedVideo || null;
+                            handleSelectVideo(video || {
+                              id: '', 
+                              course_id: courseId || '',
+                              title: 'Introduction',
+                              description: '',
+                              video_url: '',
+                              duration: '',
+                              order_index: 0,
+                              created_at: ''
+                            } as CourseVideo);
+                          }}
+                        >
+                          Continue Learning
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-3xl font-bold mb-2">Free</div>
+                        <p className="text-muted-foreground mb-6">Full access to this course</p>
+                        <Button 
+                          className="w-full mb-3"
+                          onClick={() => {
+                            if (session.userId) {
+                              updateCourseProgress(courseId!, 0);
+                              toast({
+                                title: "Enrolled!",
+                                description: "You've been enrolled in this course.",
+                              });
+                            } else {
+                              toast({
+                                title: "Login Required",
+                                description: "Please login to enroll in courses",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                        >
+                          Enroll Now
+                        </Button>
+                      </>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => {
+                        toast({
+                          title: "Added to Wishlist",
+                          description: "Course has been added to your wishlist",
+                        });
+                      }}
+                    >
+                      Add to Wishlist
+                    </Button>
                   </div>
                   
                   <Separator />

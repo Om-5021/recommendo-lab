@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Play, BookOpen, BarChart, ChevronRight, Loader2 } from 'lucide-react';
+import { Play, BookOpen, BarChart, ChevronRight, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CourseVideo } from '@/types/database';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
+import { useUserProgress } from '@/contexts/UserProgressContext';
+import { cn } from '@/lib/utils';
 
 interface CourseVideosProps {
   courseId: string;
@@ -19,6 +21,11 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
     'section-1': true
   });
   const { toast } = useToast();
+  const { userCourses } = useUserProgress();
+  
+  // Get user course progress data
+  const userCourse = userCourses.find(uc => uc.course_id === courseId);
+  const lastWatchedVideoId = userCourse?.last_watched_video;
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -100,19 +107,39 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
             </div>
           </div>
           
-          {videos.map((video, index) => (
-            <div 
-              key={video.id} 
-              className="flex justify-between items-center py-3 px-4 border-b last:border-0 last:rounded-b-lg border-border bg-background hover:bg-secondary/50 transition-colors cursor-pointer"
-              onClick={() => handleVideoClick(video)}
-            >
-              <div className="flex items-center">
-                <Play className="h-4 w-4 mr-3 text-primary" />
-                <span>{video.title}</span>
+          {videos.map((video, index) => {
+            const isWatched = userCourse && userCourse.progress > 0 && userCourse.progress >= ((index + 1) / videos.length) * 100;
+            const isLastWatched = video.id === lastWatchedVideoId;
+            
+            return (
+              <div 
+                key={video.id} 
+                className={cn(
+                  "flex justify-between items-center py-3 px-4 border-b last:border-0 last:rounded-b-lg border-border hover:bg-secondary/50 transition-colors cursor-pointer",
+                  isLastWatched ? "bg-primary/5" : "bg-background",
+                  isWatched ? "bg-primary/10" : ""
+                )}
+                onClick={() => handleVideoClick(video)}
+              >
+                <div className="flex items-center">
+                  {isWatched ? (
+                    <CheckCircle className="h-4 w-4 mr-3 text-green-500" />
+                  ) : isLastWatched ? (
+                    <Play className="h-4 w-4 mr-3 text-primary fill-primary" />
+                  ) : (
+                    <Play className="h-4 w-4 mr-3 text-primary" />
+                  )}
+                  <span>{video.title}</span>
+                  {isLastWatched && (
+                    <Badge variant="outline" className="ml-2 bg-primary/10 text-primary border-primary/20 text-xs">
+                      Continue
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-sm text-muted-foreground">{video.duration}</div>
               </div>
-              <div className="text-sm text-muted-foreground">{video.duration}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>

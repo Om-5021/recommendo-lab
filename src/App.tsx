@@ -1,40 +1,37 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import Courses from "./pages/Courses";
-import Dashboard from "./pages/Dashboard";
-import CourseDetails from "./pages/CourseDetails";
-import LearningPaths from "./pages/LearningPaths";
-import LearningPathDetails from "./pages/LearningPathDetails";
-import LearningPathExplorer from "./pages/LearningPathExplorer";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { UserProgressProvider } from './contexts/UserProgressContext';
+import { Toaster } from '@/components/ui/toaster';
+import './App.css';
 
-const queryClient = new QueryClient();
+// Import pages
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import Courses from './pages/Courses';
+import CourseDetails from './pages/CourseDetails';
+import LearningPaths from './pages/LearningPaths';
+import LearningPathExplorer from './pages/LearningPathExplorer';
+import LearningPathDetails from './pages/LearningPathDetails';
+import NotFound from './pages/NotFound';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <UserProgressProvider>
+      <Router>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/courses" element={<Courses />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/courses" element={<Courses />} />
           <Route path="/course/:courseId" element={<CourseDetails />} />
           <Route path="/learning-paths" element={<LearningPaths />} />
-          <Route path="/learning-path/:pathId" element={<LearningPathDetails />} />
           <Route path="/learning-path-explorer" element={<LearningPathExplorer />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/learning-path/:pathId" element={<LearningPathDetails />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+        <Toaster />
+      </Router>
+    </UserProgressProvider>
+  );
+}
 
 export default App;
