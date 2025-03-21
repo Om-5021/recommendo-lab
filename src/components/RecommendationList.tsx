@@ -15,6 +15,8 @@ interface RecommendationListProps {
   viewAllLink?: string;
   className?: string;
   isLoading?: boolean;
+  showExplore?: boolean;
+  explorePath?: string;
 }
 
 const RecommendationList: React.FC<RecommendationListProps> = ({
@@ -24,7 +26,9 @@ const RecommendationList: React.FC<RecommendationListProps> = ({
   showViewAll = true,
   viewAllLink = '/courses',
   className,
-  isLoading = false
+  isLoading = false,
+  showExplore = false,
+  explorePath = '/learning-paths'
 }) => {
   return (
     <section className={cn("py-12", className)}>
@@ -37,14 +41,25 @@ const RecommendationList: React.FC<RecommendationListProps> = ({
             )}
           </div>
           
-          {showViewAll && (
-            <Button variant="ghost" className="group" asChild>
-              <a href={viewAllLink}>
-                View All
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </a>
-            </Button>
-          )}
+          <div className="flex gap-3">
+            {showExplore && (
+              <Button variant="default" className="group" asChild>
+                <a href={explorePath}>
+                  Explore Learning Path
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </a>
+              </Button>
+            )}
+            
+            {showViewAll && (
+              <Button variant="ghost" className="group" asChild>
+                <a href={viewAllLink}>
+                  View All
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

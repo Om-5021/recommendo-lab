@@ -96,6 +96,8 @@ const Index = () => {
           subtitle="Based on highest ratings across our platform"
           courses={recommendedCourses}
           isLoading={isLoading}
+          showExplore={true}
+          explorePath="/learning-path-explorer"
         />
         
         {relatedCourses.length > 0 && (
