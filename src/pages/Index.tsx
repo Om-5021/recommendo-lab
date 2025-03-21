@@ -1,12 +1,14 @@
+
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import RecommendationList from '@/components/RecommendationList';
 import LearningPathsList from '@/components/LearningPathsList';
-import { getRecommendedCourses, getPopularCourses, mockCategories, LearningPath } from '@/lib/data';
+import { getRecommendedCourses, getPopularCourses, mockCategories } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import { LearningPath } from '@/types/database';
 
 const Index = () => {
   // Smooth load animation
@@ -23,21 +25,23 @@ const Index = () => {
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
 
   // Fetch learning paths
-  const fetchLearningPaths = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('learning_paths')
-        .select('*')
-        .limit(3);
-      
-      if (error) throw error;
-      if (data) setLearningPaths(data as LearningPath[]);
-    } catch (error) {
-      console.error('Error fetching learning paths:', error);
-    }
-  };
+  useEffect(() => {
+    const fetchLearningPaths = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('learning_paths')
+          .select('*')
+          .limit(3);
+        
+        if (error) throw error;
+        if (data) setLearningPaths(data as LearningPath[]);
+      } catch (error) {
+        console.error('Error fetching learning paths:', error);
+      }
+    };
 
-  fetchLearningPaths();
+    fetchLearningPaths();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
