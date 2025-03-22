@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProgressProvider } from './contexts/UserProgressContext';
 import { Toaster } from '@/components/ui/toaster';
 import './App.css';
@@ -12,7 +12,9 @@ import CourseDetails from './pages/CourseDetails';
 import LearningPaths from './pages/LearningPaths';
 import LearningPathExplorer from './pages/LearningPathExplorer';
 import LearningPathDetails from './pages/LearningPathDetails';
+import Auth from './pages/Auth';
 import NotFound from './pages/NotFound';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -20,12 +22,48 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/courses" element={<Courses />} />
-          <Route path="/course/:courseId" element={<CourseDetails />} />
-          <Route path="/learning-paths" element={<LearningPaths />} />
+          <Route path="/login" element={<Auth />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/courses"
+            element={
+              <ProtectedRoute>
+                <Courses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/course/:courseId"
+            element={
+              <ProtectedRoute>
+                <CourseDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/learning-paths"
+            element={
+              <ProtectedRoute>
+                <LearningPaths />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/learning-path-explorer" element={<LearningPathExplorer />} />
-          <Route path="/learning-path/:pathId" element={<LearningPathDetails />} />
+          <Route
+            path="/learning-path/:pathId"
+            element={
+              <ProtectedRoute>
+                <LearningPathDetails />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />

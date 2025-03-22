@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import CourseCard from '@/components/CourseCard';
 import ProgressChart from '@/components/ProgressChart';
 import DetailedLearningPath from '@/components/DetailedLearningPath';
+import LevelFilteredLearningPaths from '@/components/LevelFilteredLearningPaths';
 import { getInProgressCourses, mockProgressStats, getRecommendedCourses } from '@/lib/data';
 import { Course } from '@/types/database';
 import { useUserProgress } from '@/contexts/UserProgressContext';
@@ -241,6 +242,9 @@ const Dashboard = () => {
               />
             </section>
           )}
+          
+          {/* Level-based Learning Paths */}
+          <LevelFilteredLearningPaths />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column */}
