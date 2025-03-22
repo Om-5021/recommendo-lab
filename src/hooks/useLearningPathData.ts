@@ -95,11 +95,24 @@ export const useLearningPathData = (userId?: string) => {
       if (stepsError) throw stepsError;
       
       if (pathData && stepsData) {
-        // Transform data to required format
-        const courses = stepsData.map(step => ({
-          ...step.course,
-          step_order: step.step_order
-        }));
+        // Transform data to required format and ensure level is a valid enum value
+        const courses = stepsData.map(step => {
+          // Extract the course data
+          const courseData = step.course as any;
+          
+          // Validate the level property to ensure it's one of the allowed values
+          let courseLevel: "Beginner" | "Intermediate" | "Advanced" = "Beginner";
+          if (courseData.level === "Intermediate" || courseData.level === "Advanced") {
+            courseLevel = courseData.level;
+          }
+          
+          // Return properly typed course object with step_order
+          return {
+            ...courseData,
+            level: courseLevel,
+            step_order: step.step_order
+          } as Course & { step_order: number };
+        });
         
         setActiveLearningPathDetails({
           pathDetails: pathData,
@@ -122,3 +135,4 @@ export const useLearningPathData = (userId?: string) => {
     fetchLearningPathDetails
   };
 };
+
