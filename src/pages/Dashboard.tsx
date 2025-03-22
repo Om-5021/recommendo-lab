@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Clock, Award, ChevronUp, Bell, Settings, Loader2 } from 'lucide-react';
@@ -7,9 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import Navbar from '@/components/Navbar';
 import CourseCard from '@/components/CourseCard';
 import ProgressChart from '@/components/ProgressChart';
+import DetailedLearningPath from '@/components/DetailedLearningPath';
 import { getInProgressCourses, mockProgressStats, getRecommendedCourses } from '@/lib/data';
 import { Course } from '@/types/database';
 import { useUserProgress } from '@/contexts/UserProgressContext';
+import { useLearningPathData } from '@/hooks/useLearningPathData';
 import { supabase } from '@/lib/supabase';
 
 const Dashboard = () => {
@@ -25,6 +28,13 @@ const Dashboard = () => {
   const [courses, setCourses] = React.useState<(Course & { progress?: number })[]>([]);
   const [loadingCourses, setLoadingCourses] = React.useState(true);
   const [user, setUser] = React.useState<{ name: string } | null>(null);
+  
+  // Get learning path data
+  const { 
+    userLearningPaths, 
+    activeLearningPathDetails, 
+    loading: loadingLearningPaths
+  } = useLearningPathData(session.userId || undefined);
 
   // Fetch user information
   useEffect(() => {
@@ -211,6 +221,26 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
+          
+          {/* Learning Path Section - New */}
+          {!loadingLearningPaths && userLearningPaths.length > 0 && (
+            <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="text-xl font-bold">Your Current Learning Path</h2>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/learning-paths" className="flex items-center">
+                    View All Paths <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+              
+              <DetailedLearningPath 
+                learningPath={activeLearningPathDetails.pathDetails}
+                courses={activeLearningPathDetails.courses}
+                userProgress={userLearningPaths[0]?.progress || 0}
+              />
+            </section>
+          )}
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column */}
