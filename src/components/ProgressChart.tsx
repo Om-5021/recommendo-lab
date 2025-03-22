@@ -2,10 +2,10 @@
 import React from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { cn } from '@/lib/utils';
-import { ChartData } from '@/lib/data';
+import { WeeklyProgressItem } from '@/hooks/useWeeklyProgress';
 
 interface ProgressChartProps {
-  data: ChartData[];
+  data: WeeklyProgressItem[];
   className?: string;
 }
 

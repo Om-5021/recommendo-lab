@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Loader2, ExternalLink, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/UserContext';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -17,34 +18,18 @@ const Auth = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useUser();
+  
+  // Get redirect path from location state or default to dashboard
+  const from = location.state?.from?.pathname || '/dashboard';
 
   // Check if user is already logged in
   useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate('/dashboard');
-      }
-    };
-    checkSession();
-  }, [navigate]);
-
-  // Handle authentication state changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          toast({
-            title: 'Welcome back!',
-            description: 'You have successfully logged in',
-          });
-          navigate('/dashboard');
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [navigate, toast]);
+    if (user) {
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, from]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +44,8 @@ const Auth = () => {
       });
       
       if (error) throw error;
+      
+      // No need to redirect here, the auth state change will trigger the useEffect above
       
     } catch (error: any) {
       setError(error.message);
@@ -83,7 +70,7 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin + '/dashboard',
+          emailRedirectTo: window.location.origin + from,
         },
       });
       

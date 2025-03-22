@@ -1,54 +1,24 @@
 
-import { ReactNode, useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/UserContext';
 
-interface ProtectedRouteProps {
-  children: ReactNode;
-}
-
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        setAuthenticated(!!data.session);
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-        setAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setAuthenticated(!!session);
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useUser();
+  const location = useLocation();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
-  if (!authenticated) {
-    return <Navigate to="/login" replace />;
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

@@ -98,6 +98,36 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_goals: {
+        Row: {
+          created_at: string
+          deadline: string
+          id: string
+          progress: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline: string
+          id?: string
+          progress?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string
+          id?: string
+          progress?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       learning_path_steps: {
         Row: {
           course_id: string
@@ -157,6 +187,57 @@ export type Database = {
           description?: string
           id?: string
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
           updated_at?: string
         }
         Relationships: []
@@ -243,6 +324,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weekly_progress: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          value?: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
       }
     }
     Views: {

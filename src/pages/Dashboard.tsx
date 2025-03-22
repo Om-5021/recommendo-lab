@@ -1,11 +1,15 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BookOpen, Clock, Award } from 'lucide-react';
-import { getInProgressCourses, mockProgressStats, getRecommendedCourses } from '@/lib/data';
+import { getInProgressCourses, getRecommendedCourses } from '@/lib/data';
 import { Course } from '@/types/database';
 import { useUserProgress } from '@/contexts/UserProgressContext';
 import { useLearningPathData } from '@/hooks/useLearningPathData';
 import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/UserContext';
+import { useLearningGoals } from '@/hooks/useLearningGoals';
+import { useWeeklyProgress } from '@/hooks/useWeeklyProgress';
+
 import DashboardContainer from '@/components/dashboard/DashboardContainer';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardStats from '@/components/dashboard/DashboardStats';
@@ -17,9 +21,9 @@ import LevelFilteredLearningPaths from '@/components/LevelFilteredLearningPaths'
 
 const Dashboard = () => {
   const { session, userCourses, isLoading } = useUserProgress();
-  const [courses, setCourses] = React.useState<(Course & { progress?: number })[]>([]);
-  const [loadingCourses, setLoadingCourses] = React.useState(true);
-  const [user, setUser] = React.useState<{ name: string } | null>(null);
+  const { user, profile } = useUser();
+  const [courses, setCourses] = useState<(Course & { progress?: number })[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
   
   // Get learning path data
   const { 
@@ -27,20 +31,12 @@ const Dashboard = () => {
     activeLearningPathDetails, 
     loading: loadingLearningPaths
   } = useLearningPathData(session.userId || undefined);
-
-  // Fetch user information
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser({ 
-          name: user.email?.split('@')[0] || 'Student' 
-        });
-      }
-    };
-    
-    fetchUserData();
-  }, []);
+  
+  // Get learning goals
+  const { goals } = useLearningGoals(user?.id);
+  
+  // Get weekly progress
+  const { weeklyData } = useWeeklyProgress(user?.id);
 
   // Fetch course data
   useEffect(() => {
@@ -130,12 +126,43 @@ const Dashboard = () => {
   
   const isAuthenticated = !!session.userId && !isLoading;
 
+  // Format learning goals for DashboardSidebar
+  const formattedLearningGoals = goals.map(goal => {
+    // Calculate days remaining
+    const today = new Date();
+    const deadline = new Date(goal.deadline);
+    const daysRemaining = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    let deadlineText = '';
+    if (daysRemaining < 0) {
+      deadlineText = 'Overdue';
+    } else if (daysRemaining === 0) {
+      deadlineText = 'Due today';
+    } else if (daysRemaining === 1) {
+      deadlineText = '1 day left';
+    } else if (daysRemaining <= 7) {
+      deadlineText = `${daysRemaining} days left`;
+    } else {
+      deadlineText = `${Math.ceil(daysRemaining / 7)} weeks left`;
+    }
+    
+    return {
+      title: goal.title,
+      deadline: deadlineText,
+      progress: goal.progress,
+      id: goal.id
+    };
+  });
+
   return (
     <DashboardContainer 
       isLoading={isLoading || loadingCourses} 
       isAuthenticated={isAuthenticated}
     >
-      <DashboardHeader userName={user?.name} />
+      <DashboardHeader 
+        userName={profile?.full_name || user?.email?.split('@')[0] || 'Student'}
+        avatarUrl={profile?.avatar_url}
+      />
       
       <DashboardStats statItems={learningStats} />
       
@@ -155,12 +182,15 @@ const Dashboard = () => {
           
           {/* Weekly Progress Chart */}
           <section className="animate-fade-up" style={{ animationDelay: "0.4s" }}>
-            <ProgressChart data={mockProgressStats} />
+            <ProgressChart data={weeklyData} />
           </section>
         </div>
         
         {/* Right Column */}
-        <DashboardSidebar recommendedCourses={recommendedCourses} />
+        <DashboardSidebar 
+          recommendedCourses={recommendedCourses} 
+          learningGoals={formattedLearningGoals}
+        />
       </div>
     </DashboardContainer>
   );
