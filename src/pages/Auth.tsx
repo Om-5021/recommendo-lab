@@ -1,22 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader2, ExternalLink, UserPlus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
+import AuthLayout from './auth/AuthLayout';
+import SignInForm from './auth/SignInForm';
+import SignUpForm from './auth/SignUpForm';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('signin');
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useUser();
@@ -31,255 +24,31 @@ const Auth = () => {
     }
   }, [user, navigate, from]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      
-      // No need to redirect here, the auth state change will trigger the useEffect above
-      
-    } catch (error: any) {
-      setError(error.message);
-      toast({
-        variant: 'destructive',
-        title: 'Login failed',
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleSwitchToSignUp = () => {
+    setActiveTab('signup');
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + from,
-        },
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Registration successful',
-        description: 'Please check your email to confirm your account',
-      });
-      
-    } catch (error: any) {
-      setError(error.message);
-      toast({
-        variant: 'destructive',
-        title: 'Registration failed',
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const switchToSignUp = () => {
-    const signupTab = document.querySelector('[data-value="signup"]');
-    if (signupTab && 'click' in signupTab) {
-      (signupTab as HTMLElement).click();
-    }
-  };
-
-  const switchToSignIn = () => {
-    const signinTab = document.querySelector('[data-value="signin"]');
-    if (signinTab && 'click' in signinTab) {
-      (signinTab as HTMLElement).click();
-    }
+  const handleSwitchToSignIn = () => {
+    setActiveTab('signin');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">
-            <a href="/" className="text-primary hover:text-primary/90 transition-colors">
-              EduPlatform
-            </a>
-          </h1>
-          <p className="text-muted-foreground mt-2">Continue your learning journey</p>
-        </div>
-        
-        <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid grid-cols-2 mb-6">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          </TabsList>
-          
-          <Card className="border-none shadow-lg">
-            <TabsContent value="signin" className="m-0">
-              <CardHeader>
-                <CardTitle>Welcome back</CardTitle>
-                <CardDescription>
-                  Sign in to your account to continue learning
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="Email address"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      <>
-                        Sign In
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-              <CardFooter className="flex flex-col items-center space-y-2">
-                <div className="text-sm text-muted-foreground">
-                  Don't have an account?{" "}
-                  <button 
-                    onClick={switchToSignUp}
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    Sign up
-                  </button>
-                </div>
-              </CardFooter>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="m-0">
-              <CardHeader>
-                <CardTitle>Create an account</CardTitle>
-                <CardDescription>
-                  Sign up to start your learning journey
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="Email address"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="password"
-                        placeholder="Password (min 6 characters)"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10"
-                        minLength={6}
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating account...
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Create Account
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-              <CardFooter className="flex flex-col items-center space-y-2">
-                <div className="text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <button 
-                    onClick={switchToSignIn}
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </div>
-              </CardFooter>
-            </TabsContent>
-          </Card>
-        </Tabs>
-      </div>
-    </div>
+    <AuthLayout defaultTab={activeTab} onTabChange={setActiveTab}>
+      <SignInForm 
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        onSwitchToSignUp={handleSwitchToSignUp}
+      />
+      <SignUpForm 
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        onSwitchToSignIn={handleSwitchToSignIn}
+      />
+    </AuthLayout>
   );
 };
 
