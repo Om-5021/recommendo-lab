@@ -106,6 +106,20 @@ const Auth = () => {
     }
   };
 
+  const switchToSignUp = () => {
+    const signupTab = document.querySelector('[data-value="signup"]');
+    if (signupTab && 'click' in signupTab) {
+      (signupTab as HTMLElement).click();
+    }
+  };
+
+  const switchToSignIn = () => {
+    const signinTab = document.querySelector('[data-value="signin"]');
+    if (signinTab && 'click' in signinTab) {
+      (signinTab as HTMLElement).click();
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
       <div className="w-full max-w-md">
@@ -191,7 +205,7 @@ const Auth = () => {
                 <div className="text-sm text-muted-foreground">
                   Don't have an account?{" "}
                   <button 
-                    onClick={() => document.querySelector('[data-value="signup"]')?.click()}
+                    onClick={switchToSignUp}
                     className="text-primary underline-offset-4 hover:underline"
                   >
                     Sign up
@@ -267,7 +281,7 @@ const Auth = () => {
                 <div className="text-sm text-muted-foreground">
                   Already have an account?{" "}
                   <button 
-                    onClick={() => document.querySelector('[data-value="signin"]')?.click()}
+                    onClick={switchToSignIn}
                     className="text-primary underline-offset-4 hover:underline"
                   >
                     Sign in
