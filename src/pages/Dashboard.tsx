@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Clock, Award, ChevronUp, Bell, Settings, Loader2 } from 'lucide-react';
@@ -23,7 +22,7 @@ const Dashboard = () => {
   }, []);
 
   const { session, userCourses, isLoading } = useUserProgress();
-  const [courses, setCourses] = React.useState<Course[]>([]);
+  const [courses, setCourses] = React.useState<(Course & { progress?: number })[]>([]);
   const [loadingCourses, setLoadingCourses] = React.useState(true);
   const [user, setUser] = React.useState<{ name: string } | null>(null);
 
@@ -32,7 +31,6 @@ const Dashboard = () => {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // In a real app, you would fetch user profile data from a profiles table
         setUser({ 
           name: user.email?.split('@')[0] || 'Student' 
         });
@@ -73,7 +71,6 @@ const Dashboard = () => {
         }
         
         if (data) {
-          // Map progress data to courses
           const coursesWithProgress = data.map(course => {
             const userCourse = userCourses.find(uc => uc.course_id === course.id);
             return {
@@ -234,7 +231,7 @@ const Dashboard = () => {
                     {courses.map((course, index) => (
                       <CourseCard 
                         key={course.id} 
-                        course={course as Course} 
+                        course={course} 
                         progress={course.progress}
                       />
                     ))}

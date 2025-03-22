@@ -14,6 +14,7 @@ export interface Course {
   tags: string[];
   preview?: string | null;
   created_at: string;
+  progress?: number; // Added optional progress property
 }
 
 export interface CourseVideo {
