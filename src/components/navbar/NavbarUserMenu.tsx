@@ -48,30 +48,35 @@ const NavbarUserMenu = ({ user, profile }: NavbarUserMenuProps) => {
         <div className="flex items-center gap-2 cursor-pointer">
           <Avatar className="h-8 w-8 transition-transform hover:scale-105">
             <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || user.email} />
-            <AvatarFallback>{profile?.full_name?.[0] || user.email?.[0] || 'U'}</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 dark:bg-primary/20 text-primary">
+              {profile?.full_name?.[0] || user.email?.[0] || 'U'}
+            </AvatarFallback>
           </Avatar>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="dark:bg-gray-800 dark:border-gray-700">
+        <DropdownMenuLabel className="dark:text-gray-200">
           <div className="flex flex-col">
             <span>{profile?.full_name || 'User'}</span>
-            <span className="text-xs text-muted-foreground">{user.email}</span>
+            <span className="text-xs text-muted-foreground dark:text-gray-400">{user.email}</span>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
+        <DropdownMenuSeparator className="dark:bg-gray-700" />
+        <DropdownMenuItem asChild className="dark:text-gray-200 dark:focus:bg-gray-700 dark:hover:bg-gray-700">
           <Link to="/dashboard">Dashboard</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild className="dark:text-gray-200 dark:focus:bg-gray-700 dark:hover:bg-gray-700">
           <Link to="/courses">My Courses</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild className="dark:text-gray-200 dark:focus:bg-gray-700 dark:hover:bg-gray-700">
           <Link to="/learning-paths">Learning Paths</Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
+        <DropdownMenuSeparator className="dark:bg-gray-700" />
+        <DropdownMenuItem 
+          onClick={handleLogout}
+          className="dark:text-gray-200 dark:focus:bg-gray-700 dark:hover:bg-gray-700"
+        >
           Logout
         </DropdownMenuItem>
       </DropdownMenuContent>

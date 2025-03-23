@@ -29,11 +29,11 @@ const NavbarSearch = ({ isMobile = false }: NavbarSearchProps) => {
 
   return (
     <form onSubmit={handleSearch} className={isMobile ? "relative" : "relative w-[240px]"}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-gray-400" />
       <Input
         type="search"
         placeholder="Search courses..."
-        className="pl-10 h-9 border-none bg-secondary dark:bg-gray-800 dark:text-gray-200"
+        className="pl-10 h-9 border-none bg-secondary dark:bg-gray-800/60 dark:placeholder:text-gray-400 dark:text-gray-200"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         disabled={isSearching}

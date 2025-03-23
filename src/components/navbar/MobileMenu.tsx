@@ -41,7 +41,7 @@ const MobileMenu = ({
               onClick={closeMobileMenu}
               className="flex items-center gap-2 py-2 font-medium dark:text-gray-200"
             >
-              <User size={18} />
+              <User size={18} className="dark:text-gray-300" />
               <span>Dashboard</span>
             </Link>
             <div className="flex items-center justify-between">
@@ -50,14 +50,20 @@ const MobileMenu = ({
                 onClick={closeMobileMenu}
                 className="flex items-center gap-2 py-2 font-medium dark:text-gray-200"
               >
-                <Bell size={18} />
+                <Bell size={18} className="dark:text-gray-300" />
                 <span>Notifications</span>
                 {unreadCount > 0 && (
                   <Badge variant="destructive" className="ml-2">{unreadCount}</Badge>
                 )}
               </Link>
             </div>
-            <Button variant="outline" onClick={handleLogout} className="dark:border-gray-700 dark:text-gray-200">Logout</Button>
+            <Button 
+              variant="outline" 
+              onClick={handleLogout} 
+              className="dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              Logout
+            </Button>
           </div>
         ) : (
           <div className="pt-4 border-t border-border dark:border-gray-700">

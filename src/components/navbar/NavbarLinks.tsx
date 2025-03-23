@@ -25,8 +25,10 @@ const NavbarLinks = ({ isMobile = false, onClick }: NavbarLinksProps) => {
           to={link.path}
           onClick={onClick}
           className={cn(
-            'font-medium transition-colors hover:text-primary dark:text-gray-200 dark:hover:text-primary',
-            location.pathname === link.path ? 'text-primary dark:text-primary' : 'text-foreground',
+            'font-medium transition-colors hover:text-primary dark:hover:text-primary',
+            location.pathname === link.path 
+              ? 'text-primary dark:text-primary' 
+              : 'text-foreground dark:text-gray-200',
             isMobile && 'py-2'
           )}
         >

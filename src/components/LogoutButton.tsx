@@ -33,7 +33,12 @@ const LogoutButton = () => {
   };
 
   return (
-    <Button variant="ghost" onClick={handleLogout} disabled={loading}>
+    <Button 
+      variant="ghost" 
+      onClick={handleLogout} 
+      disabled={loading}
+      className="dark:text-gray-200 dark:hover:bg-gray-800"
+    >
       {loading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

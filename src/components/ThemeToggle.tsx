@@ -16,7 +16,7 @@ const ThemeToggle = () => {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="rounded-full"
+            className="rounded-full hover:bg-secondary dark:hover:bg-gray-800"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? (
@@ -26,7 +26,7 @@ const ThemeToggle = () => {
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
           <p>Toggle {theme === 'light' ? 'dark' : 'light'} mode</p>
         </TooltipContent>
       </Tooltip>
