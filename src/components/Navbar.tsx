@@ -84,7 +84,9 @@ const Navbar = () => {
   return (
     <header className={cn(
       'fixed top-0 left-0 right-0 z-50 transition-all-300',
-      isScrolled ? 'bg-background/80 backdrop-blur-md shadow-sm dark:bg-background/70' : 'bg-transparent'
+      isScrolled 
+        ? 'bg-background/90 backdrop-blur-md shadow-sm dark:bg-gray-900/90' 
+        : 'bg-transparent dark:bg-transparent'
     )}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
@@ -100,8 +102,8 @@ const Navbar = () => {
                 key={link.path}
                 to={link.path}
                 className={cn(
-                  'font-medium transition-colors hover:text-primary',
-                  location.pathname === link.path ? 'text-primary' : 'text-foreground'
+                  'font-medium transition-colors hover:text-primary dark:text-gray-200 dark:hover:text-primary',
+                  location.pathname === link.path ? 'text-primary dark:text-primary' : 'text-foreground'
                 )}
               >
                 {link.name}
@@ -115,7 +117,7 @@ const Navbar = () => {
               <Input
                 type="search"
                 placeholder="Search courses..."
-                className="pl-10 h-9 border-none bg-secondary"
+                className="pl-10 h-9 border-none bg-secondary dark:bg-gray-800 dark:text-gray-200"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 disabled={isSearching}
@@ -217,7 +219,7 @@ const Navbar = () => {
             <ThemeToggle />
             <button
               onClick={toggleMobileMenu}
-              className="text-foreground"
+              className="text-foreground dark:text-gray-200"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -228,7 +230,7 @@ const Navbar = () => {
 
       <div
         className={cn(
-          'md:hidden fixed inset-x-0 bg-background/95 backdrop-blur-sm transition-all duration-300 ease-in-out dark:bg-background/90',
+          'md:hidden fixed inset-x-0 bg-background/95 backdrop-blur-sm transition-all duration-300 ease-in-out dark:bg-gray-900/95',
           isMobileMenuOpen ? 'top-[72px] opacity-100' : 'top-[-100%] opacity-0'
         )}
       >
@@ -238,7 +240,7 @@ const Navbar = () => {
             <Input
               type="search"
               placeholder="Search courses..."
-              className="pl-10 w-full border-none bg-secondary"
+              className="pl-10 w-full border-none bg-secondary dark:bg-gray-800 dark:text-gray-200"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={isSearching}
@@ -251,8 +253,8 @@ const Navbar = () => {
                 to={link.path}
                 onClick={closeMobileMenu}
                 className={cn(
-                  'py-2 font-medium transition-colors',
-                  location.pathname === link.path ? 'text-primary' : 'text-foreground'
+                  'py-2 font-medium transition-colors dark:text-gray-200 dark:hover:text-primary',
+                  location.pathname === link.path ? 'text-primary dark:text-primary' : 'text-foreground'
                 )}
               >
                 {link.name}
@@ -260,11 +262,11 @@ const Navbar = () => {
             ))}
           </nav>
           {user ? (
-            <div className="pt-4 border-t border-border flex flex-col gap-3">
+            <div className="pt-4 border-t border-border dark:border-gray-700 flex flex-col gap-3">
               <Link 
                 to="/dashboard" 
                 onClick={closeMobileMenu}
-                className="flex items-center gap-2 py-2 font-medium"
+                className="flex items-center gap-2 py-2 font-medium dark:text-gray-200"
               >
                 <User size={18} />
                 <span>Dashboard</span>
@@ -273,7 +275,7 @@ const Navbar = () => {
                 <Link
                   to="/notifications"
                   onClick={closeMobileMenu}
-                  className="flex items-center gap-2 py-2 font-medium"
+                  className="flex items-center gap-2 py-2 font-medium dark:text-gray-200"
                 >
                   <Bell size={18} />
                   <span>Notifications</span>
@@ -282,10 +284,10 @@ const Navbar = () => {
                   )}
                 </Link>
               </div>
-              <Button variant="outline" onClick={handleLogout}>Logout</Button>
+              <Button variant="outline" onClick={handleLogout} className="dark:border-gray-700 dark:text-gray-200">Logout</Button>
             </div>
           ) : (
-            <div className="pt-4 border-t border-border">
+            <div className="pt-4 border-t border-border dark:border-gray-700">
               <Button asChild className="w-full">
                 <Link to="/login" onClick={closeMobileMenu}>Log In</Link>
               </Button>

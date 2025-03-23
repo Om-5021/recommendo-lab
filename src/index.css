@@ -103,6 +103,14 @@
   .page-transition {
     @apply animate-fade-in;
   }
+  
+  .dark-nav-item {
+    @apply dark:text-gray-200 dark:hover:text-primary;
+  }
+  
+  .dark-nav-bg {
+    @apply dark:bg-gray-900/90 dark:backdrop-blur-md;
+  }
 }
 
 /* Smooth scrolling */
@@ -127,6 +135,15 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Remove focus outline for mouse users, keep for keyboard */

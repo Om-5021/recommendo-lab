@@ -19,7 +19,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, defaultTab, onTabChan
               EduPlatform
             </a>
           </h1>
-          <p className="text-muted-foreground mt-2">Continue your learning journey</p>
+          <p className="text-muted-foreground mt-2 dark:text-gray-300">Continue your learning journey</p>
         </div>
         
         <Tabs defaultValue={defaultTab} className="w-full" onValueChange={onTabChange}>
@@ -28,7 +28,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, defaultTab, onTabChan
             <TabsTrigger value="signup" data-value="signup">Sign Up</TabsTrigger>
           </TabsList>
           
-          <Card className="border-none shadow-lg">
+          <Card className="border-none shadow-lg dark:bg-gray-800">
             {children}
           </Card>
         </Tabs>
