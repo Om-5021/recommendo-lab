@@ -35,10 +35,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
   useEffect(() => {
     const fetchVideoCount = async () => {
       try {
+        // Determine which ID to use for the query
+        const courseIdToUse = course.id || String(course.course_id);
+        
         const { count, error } = await supabase
           .from('course_videos')
           .select('*', { count: 'exact', head: true })
-          .eq('course_id', course.id);
+          .eq('course_id', courseIdToUse);
           
         if (error) {
           throw error;
@@ -55,14 +58,17 @@ const CourseCard: React.FC<CourseCardProps> = ({
     if (showVideoCount) {
       fetchVideoCount();
     }
-  }, [course.id, showVideoCount]);
+  }, [course, showVideoCount]);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
   };
 
+  // Ensure course has an ID to link to
+  const courseId = course.id || String(course.course_id || '');
+
   // Use default placeholder if no thumbnail provided
-  const thumbnail = course.thumbnail || 'https://via.placeholder.com/640x360?text=Course+Image';
+  const thumbnail = course.thumbnail || course.url || 'https://via.placeholder.com/640x360?text=Course+Image';
   const title = course.title || course.course_title || 'Untitled Course';
   const description = course.description || course.subject || 'No description available';
   const courseLevel = course.level || 'Beginner';
@@ -72,7 +78,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const rating = course.rating || 4.5;
 
   return (
-    <Link to={`/course/${course.id}`} className="block">
+    <Link to={`/course/${courseId}`} className="block">
       <div 
         className={cn(
           "h-full rounded-xl overflow-hidden transition-all-300 hover:translate-y-[-4px] hover:shadow-lg",

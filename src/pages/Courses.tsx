@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Loader2, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -51,18 +50,30 @@ const CoursesPage = () => {
         if (data) {
           // Transform data to match our Course interface
           const transformedCourses: Course[] = data.map(course => ({
-            id: course.id || String(course.course_id),
-            title: course.course_title || '',
-            description: course.description || course.subject || '',
-            instructor: course.instructor || 'Unknown Instructor',
-            thumbnail: course.thumbnail || course.url || 'https://via.placeholder.com/640x360',
-            duration: course.duration || `${Math.round(course.content_duration || 0)} hours`,
-            level: course.level || 'Beginner',
+            id: String(course.course_id),
+            title: course.course_title,
+            description: course.subject || 'No description available',
+            instructor: 'Instructor',
+            thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+            duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
+            level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
             category: course.subject || 'General',
-            rating: course.rating || Math.round((Math.random() * 2 + 3) * 10) / 10, // Random rating between 3-5 if not provided
-            enrollments: course.num_subscribers || Math.floor(Math.random() * 1000),
-            tags: [course.subject || 'Education'].filter(Boolean),
+            rating: 4.5, // Default rating
+            enrollments: course.num_subscribers || 0,
+            tags: [course.subject || 'General'],
             created_at: course.published_timestamp || new Date().toISOString(),
+            // Include original fields
+            course_id: course.course_id,
+            course_title: course.course_title,
+            subject: course.subject,
+            price: course.price,
+            num_lectures: course.num_lectures,
+            num_subscribers: course.num_subscribers,
+            num_reviews: course.num_reviews,
+            is_paid: course.is_paid,
+            content_duration: course.content_duration,
+            published_timestamp: course.published_timestamp,
+            url: course.url
           }));
           
           setCourses(transformedCourses);

@@ -14,39 +14,93 @@ export const useHomeData = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch popular courses (based on enrollments)
+        // Fetch popular courses (based on num_subscribers)
         const { data: popularData, error: popularError } = await supabase
           .from('courses')
           .select('*')
-          .order('enrollments', { ascending: false })
+          .order('num_subscribers', { ascending: false })
           .limit(4);
         
         if (popularError) throw popularError;
-        if (popularData) setPopularCourses(popularData as Course[]);
         
-        // Fetch recommended courses (based on rating)
+        if (popularData) {
+          // Transform data to match our Course interface
+          const transformedPopularCourses: Course[] = popularData.map(course => ({
+            id: String(course.course_id),
+            title: course.course_title,
+            description: course.subject || 'No description available',
+            instructor: 'Instructor',
+            thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+            duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
+            level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
+            category: course.subject || 'General',
+            rating: 4.5, 
+            enrollments: course.num_subscribers || 0,
+            tags: [course.subject || 'General'],
+            created_at: course.published_timestamp || new Date().toISOString()
+          }));
+          
+          setPopularCourses(transformedPopularCourses);
+        }
+        
+        // Fetch recommended courses (based on ratings - we'll just use the same data for now)
         const { data: recommendedData, error: recommendedError } = await supabase
           .from('courses')
           .select('*')
-          .order('rating', { ascending: false })
           .limit(4);
         
         if (recommendedError) throw recommendedError;
+        
         if (recommendedData) {
-          setRecommendedCourses(recommendedData as Course[]);
+          // Transform data to match our Course interface
+          const transformedRecommendedCourses: Course[] = recommendedData.map(course => ({
+            id: String(course.course_id),
+            title: course.course_title,
+            description: course.subject || 'No description available',
+            instructor: 'Instructor',
+            thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+            duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
+            level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
+            category: course.subject || 'General',
+            rating: 4.5,
+            enrollments: course.num_subscribers || 0,
+            tags: [course.subject || 'General'],
+            created_at: course.published_timestamp || new Date().toISOString()
+          }));
           
-          // Generate related courses based on the first recommended course's category and tags
+          setRecommendedCourses(transformedRecommendedCourses);
+          
+          // Generate related courses (based on subject - use different courses)
           if (recommendedData.length > 0) {
-            const mainCourse = recommendedData[0];
+            const mainSubject = recommendedData[0].subject;
             const { data: relatedData, error: relatedError } = await supabase
               .from('courses')
               .select('*')
-              .neq('id', mainCourse.id)
-              .or(`category.eq.${mainCourse.category},tags.cs.{${mainCourse.tags.join(',')}}`)
+              .neq('course_id', recommendedData[0].course_id)
+              .eq('subject', mainSubject)
               .limit(4);
             
             if (relatedError) throw relatedError;
-            if (relatedData) setRelatedCourses(relatedData as Course[]);
+            
+            if (relatedData) {
+              // Transform data to match our Course interface
+              const transformedRelatedCourses: Course[] = relatedData.map(course => ({
+                id: String(course.course_id),
+                title: course.course_title,
+                description: course.subject || 'No description available',
+                instructor: 'Instructor',
+                thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+                duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
+                level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
+                category: course.subject || 'General',
+                rating: 4.5,
+                enrollments: course.num_subscribers || 0,
+                tags: [course.subject || 'General'],
+                created_at: course.published_timestamp || new Date().toISOString()
+              }));
+              
+              setRelatedCourses(transformedRelatedCourses);
+            }
           }
         }
         

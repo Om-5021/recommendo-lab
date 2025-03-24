@@ -1,3 +1,4 @@
+
 // Type definitions for database tables
 
 export interface Course {
@@ -9,7 +10,7 @@ export interface Course {
   instructor: string;
   thumbnail: string;
   duration: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  level: 'Beginner' | 'Intermediate' | 'Advanced' | string; // Making level more flexible
   category: string;
   rating: number;
   enrollments: number;
@@ -31,7 +32,7 @@ export interface Course {
 
 export interface CourseVideo {
   id: string;
-  course_id: string;
+  course_id: string | number; // Make course_id accept both string and number
   title: string;
   description: string;
   video_url: string;

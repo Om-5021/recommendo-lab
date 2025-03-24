@@ -34,15 +34,28 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
         const { data, error } = await supabase
           .from('course_videos')
           .select('*')
-          .eq('course_id', courseId)
-          .order('order_index', { ascending: true });
+          .eq('course_id', courseId);
           
         if (error) {
           throw error;
         }
         
         if (data) {
-          setVideos(data as CourseVideo[]);
+          // Transform the data to match our CourseVideo interface
+          const transformedVideos: CourseVideo[] = data.map((video, index) => ({
+            id: String(video.course_id) + '-' + index, // Generate a unique ID
+            course_id: video.course_id,
+            title: video.course_title || `Video ${index + 1}`,
+            description: video.subject || 'No description available',
+            video_url: video.url || 'https://example.com/video.mp4',
+            duration: `${Math.round((video.content_duration || 0) / 60)} min`,
+            order_index: index,
+            created_at: video.published_timestamp || new Date().toISOString(),
+            // Include all original fields too
+            ...video
+          }));
+          
+          setVideos(transformedVideos);
         }
       } catch (error) {
         console.error('Error fetching course videos:', error);
