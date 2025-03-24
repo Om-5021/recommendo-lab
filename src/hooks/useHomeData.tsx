@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { LearningPath, Course } from '@/types/database';
+import { transformCourseData } from '@/utils/courseTransforms';
 
 export const useHomeData = () => {
   const [recommendedCourses, setRecommendedCourses] = useState<Course[]>([]);
@@ -25,31 +26,9 @@ export const useHomeData = () => {
         
         if (popularData) {
           // Transform data to match our Course interface
-          const transformedPopularCourses: Course[] = popularData.map(course => ({
-            id: String(course.course_id),
-            course_id: course.course_id,
-            title: course.course_title,
-            course_title: course.course_title,
-            description: course.subject || 'No description available',
-            instructor: 'Instructor',
-            thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
-            duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
-            level: course.level || 'Beginner',
-            category: course.subject || 'General',
-            rating: 4.5, 
-            enrollments: course.num_subscribers || 0,
-            tags: [course.subject || 'General'],
-            created_at: course.published_timestamp || new Date().toISOString(),
-            subject: course.subject,
-            url: course.url,
-            price: course.price,
-            num_lectures: course.num_lectures,
-            num_subscribers: course.num_subscribers,
-            num_reviews: course.num_reviews,
-            is_paid: course.is_paid,
-            content_duration: course.content_duration,
-            published_timestamp: course.published_timestamp
-          }));
+          const transformedPopularCourses: Course[] = popularData.map(course => 
+            transformCourseData(course)
+          );
           
           setPopularCourses(transformedPopularCourses);
         }
@@ -64,31 +43,9 @@ export const useHomeData = () => {
         
         if (recommendedData) {
           // Transform data to match our Course interface
-          const transformedRecommendedCourses: Course[] = recommendedData.map(course => ({
-            id: String(course.course_id),
-            course_id: course.course_id,
-            title: course.course_title,
-            course_title: course.course_title,
-            description: course.subject || 'No description available',
-            instructor: 'Instructor',
-            thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
-            duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
-            level: course.level || 'Beginner',
-            category: course.subject || 'General',
-            rating: 4.5,
-            enrollments: course.num_subscribers || 0,
-            tags: [course.subject || 'General'],
-            created_at: course.published_timestamp || new Date().toISOString(),
-            subject: course.subject,
-            url: course.url,
-            price: course.price,
-            num_lectures: course.num_lectures,
-            num_subscribers: course.num_subscribers,
-            num_reviews: course.num_reviews,
-            is_paid: course.is_paid,
-            content_duration: course.content_duration,
-            published_timestamp: course.published_timestamp
-          }));
+          const transformedRecommendedCourses: Course[] = recommendedData.map(course => 
+            transformCourseData(course)
+          );
           
           setRecommendedCourses(transformedRecommendedCourses);
           
@@ -106,31 +63,9 @@ export const useHomeData = () => {
             
             if (relatedData) {
               // Transform data to match our Course interface
-              const transformedRelatedCourses: Course[] = relatedData.map(course => ({
-                id: String(course.course_id),
-                course_id: course.course_id,
-                title: course.course_title,
-                course_title: course.course_title,
-                description: course.subject || 'No description available',
-                instructor: 'Instructor',
-                thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
-                duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
-                level: course.level || 'Beginner',
-                category: course.subject || 'General',
-                rating: 4.5,
-                enrollments: course.num_subscribers || 0,
-                tags: [course.subject || 'General'],
-                created_at: course.published_timestamp || new Date().toISOString(),
-                subject: course.subject,
-                url: course.url,
-                price: course.price,
-                num_lectures: course.num_lectures,
-                num_subscribers: course.num_subscribers,
-                num_reviews: course.num_reviews,
-                is_paid: course.is_paid,
-                content_duration: course.content_duration,
-                published_timestamp: course.published_timestamp
-              }));
+              const transformedRelatedCourses: Course[] = relatedData.map(course => 
+                transformCourseData(course)
+              );
               
               setRelatedCourses(transformedRelatedCourses);
             }

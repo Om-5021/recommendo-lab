@@ -11,44 +11,20 @@ export type Database = {
     Tables: {
       course_videos: {
         Row: {
-          content_duration: number | null
           course_id: number
           course_title: string | null
-          is_paid: boolean | null
-          level: string | null
-          num_lectures: number | null
-          num_reviews: number | null
-          num_subscribers: number | null
-          price: string | null
-          published_timestamp: string | null
           subject: string | null
           url: string | null
         }
         Insert: {
-          content_duration?: number | null
           course_id: number
           course_title?: string | null
-          is_paid?: boolean | null
-          level?: string | null
-          num_lectures?: number | null
-          num_reviews?: number | null
-          num_subscribers?: number | null
-          price?: string | null
-          published_timestamp?: string | null
           subject?: string | null
           url?: string | null
         }
         Update: {
-          content_duration?: number | null
           course_id?: number
           course_title?: string | null
-          is_paid?: boolean | null
-          level?: string | null
-          num_lectures?: number | null
-          num_reviews?: number | null
-          num_subscribers?: number | null
-          price?: string | null
-          published_timestamp?: string | null
           subject?: string | null
           url?: string | null
         }

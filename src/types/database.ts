@@ -3,7 +3,7 @@
 
 export interface Course {
   id?: string;
-  course_id: string | number; // Accept both string and number formats
+  course_id: number; // Standardizing to number format based on Supabase structure
   title?: string;
   course_title: string; // Actual field in Supabase
   description?: string;
@@ -32,7 +32,7 @@ export interface Course {
 
 export interface CourseVideo {
   id?: string;
-  course_id: string | number; // Accept both string and number formats
+  course_id: number; // Standardizing to number format based on Supabase structure
   title?: string;
   description?: string;
   video_url?: string;

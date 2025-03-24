@@ -35,8 +35,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
   useEffect(() => {
     const fetchVideoCount = async () => {
       try {
-        // Use the correct ID for querying
-        const courseIdToUse = course.course_id;
+        // Use the correct ID for querying - ensure it's a number
+        const courseIdToUse = typeof course.course_id === 'string' 
+          ? parseInt(course.course_id, 10) 
+          : course.course_id;
         
         if (!courseIdToUse) return;
         

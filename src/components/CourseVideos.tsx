@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Play, BookOpen, BarChart, ChevronRight, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,10 +32,19 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
       try {
         setLoading(true);
         // Parse courseId to number if it's a numeric string
-        let queryValue = courseId;
+        let queryValue: number;
         // Only convert to number if it's a numeric string
         if (/^\d+$/.test(courseId)) {
           queryValue = parseInt(courseId, 10);
+        } else {
+          console.error('Invalid course ID format:', courseId);
+          toast({
+            title: 'Error',
+            description: 'Invalid course ID format',
+            variant: 'destructive'
+          });
+          setLoading(false);
+          return;
         }
         
         const { data, error } = await supabase

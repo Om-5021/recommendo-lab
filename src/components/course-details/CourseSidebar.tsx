@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Calendar, Award, Star, Loader2 } from 'lucide-react';
@@ -44,16 +45,24 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
               className="w-full mb-3" 
               onClick={() => {
                 const video = selectedVideo || null;
-                handleSelectVideo(video || {
-                  id: '', 
-                  course_id: courseId as string | number,
-                  title: 'Introduction',
-                  description: '',
-                  video_url: '',
-                  duration: '',
-                  order_index: 0,
-                  created_at: ''
-                } as CourseVideo);
+                // Create a temporary video object if none is selected
+                if (!video) {
+                  const tempVideo: CourseVideo = {
+                    id: '', 
+                    course_id: typeof course.course_id === 'string' 
+                      ? parseInt(course.course_id, 10) 
+                      : course.course_id,
+                    title: 'Introduction',
+                    description: '',
+                    video_url: '',
+                    duration: '',
+                    order_index: 0,
+                    created_at: ''
+                  };
+                  handleSelectVideo(tempVideo);
+                } else {
+                  handleSelectVideo(video);
+                }
               }}
             >
               Continue Learning

@@ -1,288 +1,186 @@
-import React, { useEffect, useState } from 'react';
-import { BookOpen, Clock, Award } from 'lucide-react';
-import { getInProgressCourses, getRecommendedCourses } from '@/lib/data';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { BookOpen, GraduationCap, PlusCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/components/ui/use-toast';
+import { useUser } from '@/hooks/useUser';
 import { Course } from '@/types/database';
-import { useUserProgress } from '@/contexts/UserProgressContext';
-import { useLearningPathData } from '@/hooks/useLearningPathData';
 import { supabase } from '@/lib/supabase';
-import { useUser } from '@/contexts/UserContext';
-import { useLearningGoals } from '@/hooks/useLearningGoals';
-import { useWeeklyProgress } from '@/hooks/useWeeklyProgress';
-
-import DashboardContainer from '@/components/dashboard/DashboardContainer';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardStats from '@/components/dashboard/DashboardStats';
-import DashboardCourses from '@/components/dashboard/DashboardCourses';
-import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
-import ProgressChart from '@/components/ProgressChart';
-import CurrentLearningPath from '@/components/dashboard/CurrentLearningPath';
-import LevelFilteredLearningPaths from '@/components/LevelFilteredLearningPaths';
+import { mockRecommendedCourses } from '@/lib/data';
+import Navbar from '@/components/Navbar';
+import { transformCourseData } from '@/utils/courseTransforms';
 
 const Dashboard = () => {
-  const { session, userCourses, isLoading } = useUserProgress();
-  const { user, profile } = useUser();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
-  
-  // Get learning path data
-  const { 
-    userLearningPaths, 
-    activeLearningPathDetails, 
-    loading: loadingLearningPaths
-  } = useLearningPathData(session.userId || undefined);
-  
-  // Get learning goals
-  const { goals } = useLearningGoals(user?.id);
-  
-  // Get weekly progress
-  const { weeklyData } = useWeeklyProgress(user?.id);
+  const { profile, loadingProfile } = useUser();
+  const { toast } = useToast();
 
-  // Fetch course data
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        if (!userCourses.length) {
-          const inProgressCourses = getInProgressCourses();
-          const dbCourses: Course[] = inProgressCourses.map(c => ({
-            id: c.id,
-            course_id: c.id,
-            course_title: c.title,
-            title: c.title,
-            description: c.description,
-            instructor: c.instructor,
-            thumbnail: c.thumbnail,
-            duration: c.duration,
-            level: c.level,
-            category: c.category,
-            rating: c.rating,
-            enrollments: c.enrollments,
-            tags: c.tags,
-            created_at: c.created_at,
-            progress: c.progress
-          }));
-          setCourses(dbCourses);
-          setLoadingCourses(false);
-          return;
-        }
+    if (!loadingProfile) {
+      fetchCourses();
+    }
+  }, [profile, loadingProfile, toast]);
+
+  const fetchCourses = async () => {
+    try {
+      setLoadingCourses(true);
+      if (!profile?.id) return;
+      
+      // First get the user's course progress
+      const { data: userCoursesData, error: userCoursesError } = await supabase
+        .from('user_courses')
+        .select('*')
+        .eq('user_id', profile.id);
         
-        setLoadingCourses(true);
-        const courseIds = userCourses.map(uc => {
-          // Handle both string and number IDs
-          if (typeof uc.course_id === 'string' && uc.course_id.match(/^\d+$/)) {
-            return parseInt(uc.course_id, 10);
-          }
-          return uc.course_id;
-        });
-        
-        if (courseIds.length === 0) {
-          const inProgressCourses = getInProgressCourses();
-          const dbCourses: Course[] = inProgressCourses.map(c => ({
-            id: c.id,
-            course_id: c.id,
-            course_title: c.title,
-            title: c.title,
-            description: c.description,
-            instructor: c.instructor,
-            thumbnail: c.thumbnail,
-            duration: c.duration,
-            level: c.level,
-            category: c.category,
-            rating: c.rating,
-            enrollments: c.enrollments,
-            tags: c.tags,
-            created_at: c.created_at,
-            progress: c.progress
-          }));
-          setCourses(dbCourses);
-          setLoadingCourses(false);
-          return;
-        }
-        
-        // We'll split the query between numeric and non-numeric IDs
-        const numericIds = courseIds.filter(id => typeof id === 'number');
-        const stringIds = courseIds.filter(id => typeof id === 'string');
-        
-        let coursesData: any[] = [];
-        
-        // Query for numeric IDs (course_id in database)
-        if (numericIds.length > 0) {
-          const { data: numericData, error: numericError } = await supabase
-            .from('courses')
-            .select('*')
-            .in('course_id', numericIds);
-            
-          if (numericError) {
-            throw numericError;
-          }
-          
-          if (numericData) {
-            coursesData = [...coursesData, ...numericData];
-          }
-        }
-        
-        // Query for string IDs (id in database)
-        if (stringIds.length > 0) {
-          const { data: stringData, error: stringError } = await supabase
-            .from('courses')
-            .select('*')
-            .in('id', stringIds);
-            
-          if (stringError) {
-            throw stringError;
-          }
-          
-          if (stringData) {
-            coursesData = [...coursesData, ...stringData];
-          }
-        }
-        
-        if (coursesData.length > 0) {
-          const coursesWithProgress = coursesData.map(course => {
-            // Find matching user course
-            const userCourse = userCourses.find(uc => 
-              uc.course_id === course.id || 
-              uc.course_id === course.course_id.toString()
-            );
-            
-            return {
-              id: course.id || course.course_id?.toString(),
-              course_id: course.course_id,
-              title: course.title || course.course_title,
-              course_title: course.course_title,
-              description: course.description || course.subject || 'No description available',
-              instructor: course.instructor || 'Instructor',
-              thumbnail: course.thumbnail || course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
-              duration: course.duration || `${Math.round((course.content_duration || 0) / 60)} hours`,
-              level: course.level || 'Beginner',
-              category: course.category || course.subject || 'General',
-              rating: course.rating || 4.5,
-              enrollments: course.enrollments || course.num_subscribers || 0,
-              tags: course.tags || [course.subject || 'General'],
-              created_at: course.created_at || course.published_timestamp || new Date().toISOString(),
-              progress: userCourse?.progress || 0,
-              ...course
-            };
-          });
-          
-          setCourses(coursesWithProgress as Course[]);
-        } else {
-          setCourses([]);
-        }
-      } catch (error) {
-        console.error('Error fetching courses:', error);
-        setCourses([]);
-      } finally {
+      if (userCoursesError) throw userCoursesError;
+      
+      // Get the course ids from user progress
+      const courseIds = userCoursesData?.map(uc => uc.course_id) || [];
+      
+      if (courseIds.length === 0) {
+        // If no courses found, use mock data for now
+        const mockCourses: Course[] = mockRecommendedCourses.map(mockCourse => ({
+          ...mockCourse,
+          course_id: parseInt(mockCourse.id, 10),
+          course_title: mockCourse.title || ''
+        }));
+        setEnrolledCourses(mockCourses);
         setLoadingCourses(false);
+        return;
       }
-    };
-    
-    fetchCourses();
-  }, [userCourses]);
-
-  // Get recommended courses
-  const recommendedCourses = getRecommendedCourses().slice(0, 2);
-
-  // Calculate learning stats
-  const learningStats = [
-    { 
-      icon: <BookOpen className="h-6 w-6 text-blue-600" />, 
-      title: 'Courses in Progress', 
-      value: courses.length.toString(), 
-      trend: `${courses.length > 0 ? '+1' : '0'} this week`, 
-      trendUp: courses.length > 0 
-    },
-    { 
-      icon: <Clock className="h-6 w-6 text-purple-600" />, 
-      title: 'Learning Hours', 
-      value: userCourses.length ? `${(userCourses.length * 3.5).toFixed(1)}` : '0', 
-      trend: `+${userCourses.length ? '4.5' : '0'} this week`, 
-      trendUp: userCourses.length > 0 
-    },
-    { 
-      icon: <Award className="h-6 w-6 text-amber-600" />, 
-      title: 'Completed Courses', 
-      value: userCourses.filter(c => c.completed).length.toString(), 
-      trend: userCourses.filter(c => c.completed).length > 0 ? '1 this month' : '0 this month', 
-      trendUp: userCourses.filter(c => c.completed).length > 0 
-    },
-    { 
-      icon: <BookOpen className="h-6 w-6 text-emerald-600" />, 
-      title: 'Daily Streak', 
-      value: '1', 
-      trend: 'days', 
-      trendUp: null 
+      
+      // Get the actual course data from Supabase
+      const promises = courseIds.map(async (courseId) => {
+        // Handle both string and number course IDs
+        const parsedCourseId = typeof courseId === 'string' && /^\d+$/.test(courseId) 
+          ? parseInt(courseId, 10) 
+          : courseId;
+          
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('course_id', parsedCourseId)
+          .maybeSingle();
+          
+        if (error) {
+          console.error('Error fetching course:', error);
+          return null;
+        }
+        
+        if (!data) return null;
+        
+        // Get progress from user_courses
+        const userCourse = userCoursesData?.find(uc => uc.course_id === courseId);
+        const progress = userCourse?.progress || 0;
+        
+        // Transform data to match our Course interface
+        return { 
+          ...transformCourseData(data),
+          progress
+        };
+      });
+      
+      const courses = await Promise.all(promises);
+      setEnrolledCourses(courses.filter(Boolean) as Course[]);
+    } catch (error) {
+      console.error('Error fetching enrolled courses:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load your courses',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingCourses(false);
     }
-  ];
-  
-  const isAuthenticated = !!session.userId && !isLoading;
+  };
 
-  // Format learning goals for DashboardSidebar
-  const formattedLearningGoals = goals.map(goal => {
-    // Calculate days remaining
-    const today = new Date();
-    const deadline = new Date(goal.deadline);
-    const daysRemaining = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    let deadlineText = '';
-    if (daysRemaining < 0) {
-      deadlineText = 'Overdue';
-    } else if (daysRemaining === 0) {
-      deadlineText = 'Due today';
-    } else if (daysRemaining === 1) {
-      deadlineText = '1 day left';
-    } else if (daysRemaining <= 7) {
-      deadlineText = `${daysRemaining} days left`;
-    } else {
-      deadlineText = `${Math.ceil(daysRemaining / 7)} weeks left`;
-    }
-    
-    return {
-      title: goal.title,
-      deadline: deadlineText,
-      progress: goal.progress,
-      id: goal.id
-    };
-  });
+  if (loadingProfile) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <DashboardContainer 
-      isLoading={isLoading || loadingCourses} 
-      isAuthenticated={isAuthenticated}
-    >
-      <DashboardHeader 
-        userName={profile?.full_name || user?.email?.split('@')[0] || 'Student'}
-        avatarUrl={profile?.avatar_url}
-      />
-      
-      <DashboardStats statItems={learningStats} />
-      
-      <CurrentLearningPath 
-        pathDetails={activeLearningPathDetails.pathDetails}
-        courses={activeLearningPathDetails.courses}
-        progress={userLearningPaths[0]?.progress || 0}
-        isLoading={loadingLearningPaths}
-      />
-      
-      <LevelFilteredLearningPaths />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-8">
-          <DashboardCourses courses={courses} />
-          
-          {/* Weekly Progress Chart */}
-          <section className="animate-fade-up" style={{ animationDelay: "0.4s" }}>
-            <ProgressChart data={weeklyData} />
-          </section>
+    <div className="min-h-screen bg-background dark:bg-gray-900">
+      <Navbar />
+      <main className="container pt-24 pb-12 px-4 mx-auto">
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold dark:text-white">My Dashboard</h1>
+            <p className="text-muted-foreground dark:text-gray-400">
+              Track your progress and continue learning.
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/courses" className="flex items-center">
+              <PlusCircle className="mr-2 h-4 w-4" /> Browse Courses
+            </Link>
+          </Button>
         </div>
-        
-        {/* Right Column */}
-        <DashboardSidebar 
-          recommendedCourses={recommendedCourses} 
-          learningGoals={formattedLearningGoals}
-        />
-      </div>
-    </DashboardContainer>
+
+        {loadingCourses ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+            <span className="text-lg dark:text-white">Loading your courses...</span>
+          </div>
+        ) : enrolledCourses.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {enrolledCourses.map((course) => (
+              <Card key={course.id} className="glass-card dark:bg-gray-800 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold line-clamp-1 dark:text-white">
+                    {course.title}
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground dark:text-gray-400">
+                    {course.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <div className="flex items-center text-sm text-muted-foreground dark:text-gray-400">
+                      <GraduationCap className="mr-2 h-4 w-4" />
+                      <span>{course.level}</span>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground dark:text-gray-400">
+                        Progress
+                      </span>
+                      <span className="font-medium dark:text-white">
+                        {course.progress}%
+                      </span>
+                    </div>
+                    <Progress value={course.progress || 0} className="h-2" />
+                  </div>
+                  <Button asChild variant="secondary" className="w-full dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+                    <Link to={`/course/${course.id}`} className="flex items-center justify-center">
+                      Continue Learning
+                      <BookOpen className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 dark:text-white">
+            <h3 className="text-2xl font-semibold mb-2">No courses yet</h3>
+            <p className="text-muted-foreground dark:text-gray-400">
+              Start learning something new today!
+            </p>
+            <Button asChild variant="outline" className="mt-4 dark:bg-gray-800 dark:text-white dark:border-gray-700 dark:hover:bg-gray-700">
+              <Link to="/courses">Browse Courses</Link>
+            </Button>
+          </div>
+        )}
+      </main>
+    </div>
   );
 };
 
