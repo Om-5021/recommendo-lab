@@ -42,9 +42,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
       <Button 
         variant="outline" 
         className={cn(
-          "w-full h-24 text-lg justify-center bg-white/80 backdrop-blur-sm hover:bg-white",
-          "border-blue-100 shadow-sm transition-all-300 hover:shadow-md hover:-translate-y-1",
-          "dark:bg-gray-800/60 dark:backdrop-blur-sm dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+          "w-full h-24 text-lg justify-center",
+          // Light mode styling
+          "bg-white/80 backdrop-blur-sm hover:bg-white border-blue-100 shadow-sm",
+          // Dark mode styling
+          "dark:bg-gray-800/60 dark:backdrop-blur-sm dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700",
+          // Shared styling
+          "transition-all duration-300 hover:shadow-md hover:-translate-y-1"
         )}
       >
         {category}

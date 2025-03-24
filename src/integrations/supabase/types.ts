@@ -11,90 +11,91 @@ export type Database = {
     Tables: {
       course_videos: {
         Row: {
-          course_id: string
-          created_at: string
-          description: string
-          duration: string
-          id: string
-          order_index: number
-          title: string
-          video_url: string
+          content_duration: number | null
+          course_id: number
+          course_title: string | null
+          is_paid: boolean | null
+          level: string | null
+          num_lectures: number | null
+          num_reviews: number | null
+          num_subscribers: number | null
+          price: string | null
+          published_timestamp: string | null
+          subject: string | null
+          url: string | null
         }
         Insert: {
-          course_id: string
-          created_at?: string
-          description: string
-          duration: string
-          id?: string
-          order_index: number
-          title: string
-          video_url: string
+          content_duration?: number | null
+          course_id: number
+          course_title?: string | null
+          is_paid?: boolean | null
+          level?: string | null
+          num_lectures?: number | null
+          num_reviews?: number | null
+          num_subscribers?: number | null
+          price?: string | null
+          published_timestamp?: string | null
+          subject?: string | null
+          url?: string | null
         }
         Update: {
-          course_id?: string
-          created_at?: string
-          description?: string
-          duration?: string
-          id?: string
-          order_index?: number
-          title?: string
-          video_url?: string
+          content_duration?: number | null
+          course_id?: number
+          course_title?: string | null
+          is_paid?: boolean | null
+          level?: string | null
+          num_lectures?: number | null
+          num_reviews?: number | null
+          num_subscribers?: number | null
+          price?: string | null
+          published_timestamp?: string | null
+          subject?: string | null
+          url?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "course_videos_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       courses: {
         Row: {
-          category: string
-          created_at: string
-          description: string
-          duration: string
-          enrollments: number
-          id: string
-          instructor: string
-          level: string
-          preview: string | null
-          rating: number
-          tags: string[]
-          thumbnail: string
-          title: string
+          content_duration: number | null
+          course_id: number
+          course_title: string
+          is_paid: boolean | null
+          level: string | null
+          num_lectures: number | null
+          num_reviews: number | null
+          num_subscribers: number | null
+          price: string | null
+          published_timestamp: string | null
+          subject: string | null
+          url: string | null
         }
         Insert: {
-          category: string
-          created_at?: string
-          description: string
-          duration: string
-          enrollments?: number
-          id?: string
-          instructor: string
-          level: string
-          preview?: string | null
-          rating: number
-          tags?: string[]
-          thumbnail: string
-          title: string
+          content_duration?: number | null
+          course_id: number
+          course_title: string
+          is_paid?: boolean | null
+          level?: string | null
+          num_lectures?: number | null
+          num_reviews?: number | null
+          num_subscribers?: number | null
+          price?: string | null
+          published_timestamp?: string | null
+          subject?: string | null
+          url?: string | null
         }
         Update: {
-          category?: string
-          created_at?: string
-          description?: string
-          duration?: string
-          enrollments?: number
-          id?: string
-          instructor?: string
-          level?: string
-          preview?: string | null
-          rating?: number
-          tags?: string[]
-          thumbnail?: string
-          title?: string
+          content_duration?: number | null
+          course_id?: number
+          course_title?: string
+          is_paid?: boolean | null
+          level?: string | null
+          num_lectures?: number | null
+          num_reviews?: number | null
+          num_subscribers?: number | null
+          price?: string | null
+          published_timestamp?: string | null
+          subject?: string | null
+          url?: string | null
         }
         Relationships: []
       }
@@ -151,13 +152,6 @@ export type Database = {
           step_order?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "learning_path_steps_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "learning_path_steps_learning_path_id_fkey"
             columns: ["learning_path_id"]
@@ -273,22 +267,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_courses_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_courses_last_watched_video_fkey"
-            columns: ["last_watched_video"]
-            isOneToOne: false
-            referencedRelation: "course_videos"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_learning_paths: {
         Row: {
