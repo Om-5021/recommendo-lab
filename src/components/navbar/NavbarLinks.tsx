@@ -1,41 +1,52 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { Home, Book, Compass, BarChart2, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import useSession from '@/hooks/useSession';
+import { useLocation } from 'react-router-dom';
 
-interface NavbarLinksProps {
-  isMobile?: boolean;
-  onClick?: () => void;
+interface NavLinkProps {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  className?: string;
 }
 
-const NavbarLinks = ({ isMobile = false, onClick }: NavbarLinksProps) => {
+const NavLink = ({ href, icon, label, className }: NavLinkProps) => {
   const location = useLocation();
-  
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Courses', path: '/courses' },
-    { name: 'Dashboard', path: '/dashboard' }
-  ];
+  const isActive = location.pathname === href;
 
   return (
-    <nav className={isMobile ? "flex flex-col space-y-4" : "hidden md:flex items-center space-x-8"}>
-      {navLinks.map((link) => (
-        <Link
-          key={link.path}
-          to={link.path}
-          onClick={onClick}
-          className={cn(
-            'font-medium transition-colors hover:text-primary dark:hover:text-primary',
-            location.pathname === link.path 
-              ? 'text-primary dark:text-primary' 
-              : 'text-foreground dark:text-gray-200',
-            isMobile && 'py-2'
-          )}
-        >
-          {link.name}
-        </Link>
-      ))}
-    </nav>
+    <Link 
+      to={href} 
+      className={cn(
+        "flex items-center gap-2 text-base font-medium transition-colors hover:text-foreground/80",
+        isActive ? "text-foreground" : "text-foreground/60",
+        className
+      )}
+    >
+      {icon}
+      <span>{label}</span>
+    </Link>
+  );
+};
+
+const NavbarLinks = () => {
+  const { session } = useSession();
+
+  return (
+    <div className="hidden md:flex items-center gap-6">
+      <NavLink href="/" icon={<Home className="h-4 w-4" />} label="Home" />
+      <NavLink href="/courses" icon={<Book className="h-4 w-4" />} label="Courses" />
+      <NavLink href="/learning-paths" icon={<Compass className="h-4 w-4" />} label="Learning Paths" />
+      {session && (
+        <>
+          <NavLink href="/dashboard" icon={<BarChart2 className="h-4 w-4" />} label="Dashboard" />
+          <NavLink href="/course-import" icon={<Upload className="h-4 w-4" />} label="Import Courses" />
+        </>
+      )}
+    </div>
   );
 };
 
