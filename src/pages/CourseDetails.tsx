@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -41,18 +40,54 @@ const CourseDetails = () => {
       
       try {
         setLoadingCourse(true);
-        const { data, error } = await supabase
-          .from('courses')
-          .select('*')
-          .eq('id', courseId)
-          .maybeSingle();
+        
+        // Check if the courseId is numeric (from database) or a UUID (from UI)
+        const isNumeric = /^\d+$/.test(courseId);
+        
+        let query;
+        if (isNumeric) {
+          // If numeric, search by course_id
+          query = supabase
+            .from('courses')
+            .select('*')
+            .eq('course_id', parseInt(courseId, 10))
+            .maybeSingle();
+        } else {
+          // If UUID, search by id
+          query = supabase
+            .from('courses')
+            .select('*')
+            .eq('id', courseId)
+            .maybeSingle();
+        }
+        
+        const { data, error } = await query;
           
         if (error) {
           throw error;
         }
         
         if (data) {
-          setCourse(data as Course);
+          // Transform data for consistency
+          const transformedCourse: Course = {
+            id: data.id || data.course_id?.toString(),
+            course_id: data.course_id,
+            title: data.title || data.course_title,
+            course_title: data.course_title,
+            description: data.description || data.subject || 'No description available',
+            instructor: data.instructor || 'Instructor',
+            thumbnail: data.thumbnail || data.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+            duration: data.duration || `${Math.round((data.content_duration || 0) / 60)} hours`,
+            level: data.level || 'Beginner',
+            category: data.category || data.subject || 'General',
+            rating: data.rating || 4.5,
+            enrollments: data.enrollments || data.num_subscribers || 0,
+            tags: data.tags || [data.subject || 'General'],
+            created_at: data.created_at || data.published_timestamp || new Date().toISOString(),
+            ...data
+          };
+          
+          setCourse(transformedCourse);
         } else {
           setCourse(null);
         }

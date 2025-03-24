@@ -2,21 +2,21 @@
 // Type definitions for database tables
 
 export interface Course {
-  id: string;
-  course_id?: number; // Added to match the backend schema
-  title: string;
-  course_title?: string; // Added to match the backend schema
-  description: string;
-  instructor: string;
-  thumbnail: string;
-  duration: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | string; // Making level more flexible
-  category: string;
-  rating: number;
-  enrollments: number;
-  tags: string[];
+  id?: string;
+  course_id: number; // Primary key in Supabase
+  title?: string;
+  course_title: string; // Actual field in Supabase
+  description?: string;
+  instructor?: string;
+  thumbnail?: string;
+  duration?: string;
+  level?: 'Beginner' | 'Intermediate' | 'Advanced' | string; // Making level more flexible
+  category?: string;
+  rating?: number;
+  enrollments?: number;
+  tags?: string[];
   preview?: string | null;
-  created_at: string;
+  created_at?: string;
   progress?: number; // Added optional progress property
   // Backend specific fields
   subject?: string;
@@ -31,14 +31,14 @@ export interface Course {
 }
 
 export interface CourseVideo {
-  id: string;
-  course_id: string | number; // Make course_id accept both string and number
-  title: string;
-  description: string;
-  video_url: string;
-  duration: string;
-  order_index: number;
-  created_at: string;
+  id?: string;
+  course_id: number; // Match Supabase field type
+  title?: string;
+  description?: string;
+  video_url?: string;
+  duration?: string;
+  order_index?: number;
+  created_at?: string;
   // Backend specific fields
   course_title?: string;
   subject?: string;

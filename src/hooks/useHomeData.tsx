@@ -27,17 +27,28 @@ export const useHomeData = () => {
           // Transform data to match our Course interface
           const transformedPopularCourses: Course[] = popularData.map(course => ({
             id: String(course.course_id),
+            course_id: course.course_id,
             title: course.course_title,
+            course_title: course.course_title,
             description: course.subject || 'No description available',
             instructor: 'Instructor',
             thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
             duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
-            level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
+            level: course.level || 'Beginner',
             category: course.subject || 'General',
             rating: 4.5, 
             enrollments: course.num_subscribers || 0,
             tags: [course.subject || 'General'],
-            created_at: course.published_timestamp || new Date().toISOString()
+            created_at: course.published_timestamp || new Date().toISOString(),
+            subject: course.subject,
+            url: course.url,
+            price: course.price,
+            num_lectures: course.num_lectures,
+            num_subscribers: course.num_subscribers,
+            num_reviews: course.num_reviews,
+            is_paid: course.is_paid,
+            content_duration: course.content_duration,
+            published_timestamp: course.published_timestamp
           }));
           
           setPopularCourses(transformedPopularCourses);
@@ -55,17 +66,28 @@ export const useHomeData = () => {
           // Transform data to match our Course interface
           const transformedRecommendedCourses: Course[] = recommendedData.map(course => ({
             id: String(course.course_id),
+            course_id: course.course_id,
             title: course.course_title,
+            course_title: course.course_title,
             description: course.subject || 'No description available',
             instructor: 'Instructor',
             thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
             duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
-            level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
+            level: course.level || 'Beginner',
             category: course.subject || 'General',
             rating: 4.5,
             enrollments: course.num_subscribers || 0,
             tags: [course.subject || 'General'],
-            created_at: course.published_timestamp || new Date().toISOString()
+            created_at: course.published_timestamp || new Date().toISOString(),
+            subject: course.subject,
+            url: course.url,
+            price: course.price,
+            num_lectures: course.num_lectures,
+            num_subscribers: course.num_subscribers,
+            num_reviews: course.num_reviews,
+            is_paid: course.is_paid,
+            content_duration: course.content_duration,
+            published_timestamp: course.published_timestamp
           }));
           
           setRecommendedCourses(transformedRecommendedCourses);
@@ -86,17 +108,28 @@ export const useHomeData = () => {
               // Transform data to match our Course interface
               const transformedRelatedCourses: Course[] = relatedData.map(course => ({
                 id: String(course.course_id),
+                course_id: course.course_id,
                 title: course.course_title,
+                course_title: course.course_title,
                 description: course.subject || 'No description available',
                 instructor: 'Instructor',
                 thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
                 duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
-                level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
+                level: course.level || 'Beginner',
                 category: course.subject || 'General',
                 rating: 4.5,
                 enrollments: course.num_subscribers || 0,
                 tags: [course.subject || 'General'],
-                created_at: course.published_timestamp || new Date().toISOString()
+                created_at: course.published_timestamp || new Date().toISOString(),
+                subject: course.subject,
+                url: course.url,
+                price: course.price,
+                num_lectures: course.num_lectures,
+                num_subscribers: course.num_subscribers,
+                num_reviews: course.num_reviews,
+                is_paid: course.is_paid,
+                content_duration: course.content_duration,
+                published_timestamp: course.published_timestamp
               }));
               
               setRelatedCourses(transformedRelatedCourses);

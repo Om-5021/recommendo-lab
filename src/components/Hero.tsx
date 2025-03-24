@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,8 +50,10 @@ const Hero = () => {
       if (matchingCourses && matchingCourses.length > 0) {
         // Transform the courses to match our Course interface
         const transformedCourses: Course[] = matchingCourses.map(course => ({
-          id: String(course.course_id),
+          id: course.course_id?.toString(),
+          course_id: course.course_id,
           title: course.course_title,
+          course_title: course.course_title,
           description: course.subject || 'No description available',
           instructor: 'Instructor',
           thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
@@ -61,9 +64,6 @@ const Hero = () => {
           enrollments: course.num_subscribers || 0,
           tags: [course.subject || 'General'],
           created_at: course.published_timestamp || new Date().toISOString(),
-          // Include original fields
-          course_id: course.course_id,
-          subject: course.subject,
         }));
         
         // Find any learning paths that include these courses
@@ -86,7 +86,7 @@ const Hero = () => {
             .select('*')
             .in('id', pathIds)
             .limit(1)
-            .single();
+            .maybeSingle();
           
           if (lpError && lpError.code !== 'PGRST116') throw lpError;
           
@@ -94,64 +94,65 @@ const Hero = () => {
             // Get all courses in this learning path in order
             const { data: orderedCourses, error: stepsError } = await supabase
               .from('learning_path_steps')
-              .select('*, course:courses(*)')
+              .select('*')
               .eq('learning_path_id', learningPath.id)
               .order('step_order', { ascending: true });
             
             if (stepsError) throw stepsError;
             
-            // Transform course data
-            const transformedOrderedCourses = orderedCourses.map(step => {
-              const course = step.course;
-              return {
-                id: String(course.course_id),
-                title: course.course_title,
-                description: course.subject || 'No description available',
-                instructor: 'Instructor',
-                thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
-                duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
-                level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
-                category: course.subject || 'General',
-                rating: 4.5, // Default rating
-                enrollments: course.num_subscribers || 0,
-                tags: [course.subject || 'General'],
-                created_at: course.published_timestamp || new Date().toISOString(),
-              } as Course;
-            });
-            
-            // Format the data for display
-            const roadmap = {
-              pathName: learningPath.title,
-              pathDescription: learningPath.description,
-              pathId: learningPath.id,
-              courses: transformedOrderedCourses
-            };
-            
-            setRoadmapData(roadmap);
-            toast.success(`Found a learning path for "${searchQuery}"`);
+            if (orderedCourses && orderedCourses.length > 0) {
+              // Now fetch each course
+              const coursesList: Course[] = [];
+              
+              for (const step of orderedCourses) {
+                const { data: courseData, error: courseError } = await supabase
+                  .from('courses')
+                  .select('*')
+                  .eq('course_id', step.course_id)
+                  .maybeSingle();
+                
+                if (!courseError && courseData) {
+                  const transformedCourse: Course = {
+                    id: courseData.course_id?.toString(),
+                    course_id: courseData.course_id,
+                    title: courseData.course_title,
+                    course_title: courseData.course_title,
+                    description: courseData.subject || 'No description available',
+                    instructor: 'Instructor',
+                    thumbnail: courseData.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+                    duration: `${Math.round((courseData.content_duration || 0) / 60)} hours`,
+                    level: courseData.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
+                    category: courseData.subject || 'General',
+                    rating: 4.5, // Default rating
+                    enrollments: courseData.num_subscribers || 0,
+                    tags: [courseData.subject || 'General'],
+                    created_at: courseData.published_timestamp || new Date().toISOString(),
+                  };
+                  coursesList.push(transformedCourse);
+                }
+              }
+              
+              // Format the data for display
+              const roadmap = {
+                pathName: learningPath.title,
+                pathDescription: learningPath.description,
+                pathId: learningPath.id,
+                courses: coursesList
+              };
+              
+              setRoadmapData(roadmap);
+              toast.success(`Found a learning path for "${searchQuery}"`);
+            } else {
+              // Fallback to creating a suggested path
+              createCustomPath(transformedCourses);
+            }
           } else {
             // If no existing learning path, create a suggested one based on courses
-            const roadmap = {
-              pathName: `Custom path for "${searchQuery}"`,
-              pathDescription: `A suggested learning path based on your search for "${searchQuery}"`,
-              isCustom: true,
-              courses: transformedCourses.sort((a, b) => a.level === 'Beginner' ? -1 : b.level === 'Beginner' ? 1 : 0)
-            };
-            
-            setRoadmapData(roadmap);
-            toast.success(`Created a custom path for "${searchQuery}"`);
+            createCustomPath(transformedCourses);
           }
         } else {
           // No existing paths, create a custom one
-          const roadmap = {
-            pathName: `Custom path for "${searchQuery}"`,
-            pathDescription: `A suggested learning path based on your search for "${searchQuery}"`,
-            isCustom: true,
-            courses: transformedCourses.sort((a, b) => a.level === 'Beginner' ? -1 : b.level === 'Beginner' ? 1 : 0)
-          };
-          
-          setRoadmapData(roadmap);
-          toast.success(`Created a custom path for "${searchQuery}"`);
+          createCustomPath(transformedCourses);
         }
       } else {
         toast.error(`No courses found for "${searchQuery}"`);
@@ -162,6 +163,19 @@ const Hero = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  // Helper function to create a custom path
+  const createCustomPath = (courses: Course[]) => {
+    const roadmap = {
+      pathName: `Custom path for "${searchQuery}"`,
+      pathDescription: `A suggested learning path based on your search for "${searchQuery}"`,
+      isCustom: true,
+      courses: courses.sort((a, b) => a.level === 'Beginner' ? -1 : b.level === 'Beginner' ? 1 : 0)
+    };
+    
+    setRoadmapData(roadmap);
+    toast.success(`Created a custom path for "${searchQuery}"`);
   };
 
   return (

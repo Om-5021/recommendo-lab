@@ -35,8 +35,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
   useEffect(() => {
     const fetchVideoCount = async () => {
       try {
-        // Determine which ID to use for the query
-        const courseIdToUse = course.id || String(course.course_id);
+        // Use the correct ID for querying
+        const courseIdToUse = course.course_id;
+        
+        if (!courseIdToUse) return;
         
         const { count, error } = await supabase
           .from('course_videos')
@@ -64,8 +66,8 @@ const CourseCard: React.FC<CourseCardProps> = ({
     setImageLoaded(true);
   };
 
-  // Ensure course has an ID to link to
-  const courseId = course.id || String(course.course_id || '');
+  // Generate a courseId for routing that works with our URL structure
+  const courseId = course.id || course.course_id?.toString() || '';
 
   // Use default placeholder if no thumbnail provided
   const thumbnail = course.thumbnail || course.url || 'https://via.placeholder.com/640x360?text=Course+Image';

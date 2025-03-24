@@ -31,10 +31,18 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
     const fetchVideos = async () => {
       try {
         setLoading(true);
+        // Parse courseId to number if it's a string
+        const courseIdNumber = parseInt(courseId, 10);
+        
+        if (isNaN(courseIdNumber)) {
+          console.error('Invalid course ID:', courseId);
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('course_videos')
           .select('*')
-          .eq('course_id', courseId);
+          .eq('course_id', courseIdNumber);
           
         if (error) {
           throw error;
@@ -43,7 +51,7 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
         if (data) {
           // Transform the data to match our CourseVideo interface
           const transformedVideos: CourseVideo[] = data.map((video, index) => ({
-            id: String(video.course_id) + '-' + index, // Generate a unique ID
+            id: `${video.course_id}-${index}`,
             course_id: video.course_id,
             title: video.course_title || `Video ${index + 1}`,
             description: video.subject || 'No description available',

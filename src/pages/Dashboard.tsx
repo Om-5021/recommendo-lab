@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BookOpen, Clock, Award } from 'lucide-react';
 import { getInProgressCourses, getRecommendedCourses } from '@/lib/data';
@@ -50,7 +49,13 @@ const Dashboard = () => {
         }
         
         setLoadingCourses(true);
-        const courseIds = userCourses.map(uc => uc.course_id);
+        const courseIds = userCourses.map(uc => {
+          // Handle both string and number IDs
+          if (uc.course_id.match(/^\d+$/)) {
+            return parseInt(uc.course_id, 10);
+          }
+          return uc.course_id;
+        });
         
         if (courseIds.length === 0) {
           const inProgressCourses = getInProgressCourses();
@@ -59,28 +64,79 @@ const Dashboard = () => {
           return;
         }
         
-        const { data, error } = await supabase
-          .from('courses')
-          .select('*')
-          .in('id', courseIds);
+        // We'll split the query between numeric and non-numeric IDs
+        const numericIds = courseIds.filter(id => typeof id === 'number');
+        const stringIds = courseIds.filter(id => typeof id === 'string');
+        
+        let coursesData: any[] = [];
+        
+        // Query for numeric IDs (course_id in database)
+        if (numericIds.length > 0) {
+          const { data: numericData, error: numericError } = await supabase
+            .from('courses')
+            .select('*')
+            .in('course_id', numericIds);
+            
+          if (numericError) {
+            throw numericError;
+          }
           
-        if (error) {
-          throw error;
+          if (numericData) {
+            coursesData = [...coursesData, ...numericData];
+          }
         }
         
-        if (data) {
-          const coursesWithProgress = data.map(course => {
-            const userCourse = userCourses.find(uc => uc.course_id === course.id);
+        // Query for string IDs (id in database)
+        if (stringIds.length > 0) {
+          const { data: stringData, error: stringError } = await supabase
+            .from('courses')
+            .select('*')
+            .in('id', stringIds);
+            
+          if (stringError) {
+            throw stringError;
+          }
+          
+          if (stringData) {
+            coursesData = [...coursesData, ...stringData];
+          }
+        }
+        
+        if (coursesData.length > 0) {
+          const coursesWithProgress = coursesData.map(course => {
+            // Find matching user course
+            const userCourse = userCourses.find(uc => 
+              uc.course_id === course.id || 
+              uc.course_id === course.course_id.toString()
+            );
+            
             return {
-              ...course,
-              progress: userCourse?.progress || 0
+              id: course.id || course.course_id?.toString(),
+              course_id: course.course_id,
+              title: course.title || course.course_title,
+              course_title: course.course_title,
+              description: course.description || course.subject || 'No description available',
+              instructor: course.instructor || 'Instructor',
+              thumbnail: course.thumbnail || course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+              duration: course.duration || `${Math.round((course.content_duration || 0) / 60)} hours`,
+              level: course.level || 'Beginner',
+              category: course.category || course.subject || 'General',
+              rating: course.rating || 4.5,
+              enrollments: course.enrollments || course.num_subscribers || 0,
+              tags: course.tags || [course.subject || 'General'],
+              created_at: course.created_at || course.published_timestamp || new Date().toISOString(),
+              progress: userCourse?.progress || 0,
+              ...course
             };
           });
           
           setCourses(coursesWithProgress as Course[]);
+        } else {
+          setCourses([]);
         }
       } catch (error) {
         console.error('Error fetching courses:', error);
+        setCourses([]);
       } finally {
         setLoadingCourses(false);
       }
