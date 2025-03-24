@@ -7,8 +7,8 @@ export const transformCourseData = (course: any): Course => {
   return {
     id: String(course.course_id),
     course_id: course.course_id,
-    title: course.course_title,
-    course_title: course.course_title,
+    title: course.course_title || 'Untitled Course',
+    course_title: course.course_title || 'Untitled Course',
     description: course.subject || 'No description available',
     instructor: 'Instructor',
     thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
@@ -17,18 +17,18 @@ export const transformCourseData = (course: any): Course => {
     category: course.subject || 'General',
     rating: 4.5, // Default rating
     enrollments: course.num_subscribers || 0,
-    tags: [course.subject || 'General'],
+    tags: course.subject ? [course.subject] : ['General'],
     created_at: course.published_timestamp || new Date().toISOString(),
     // Include original fields
     subject: course.subject,
     url: course.url,
-    price: course.price,
-    num_lectures: course.num_lectures,
-    num_subscribers: course.num_subscribers,
-    num_reviews: course.num_reviews,
-    is_paid: course.is_paid,
-    content_duration: course.content_duration,
-    published_timestamp: course.published_timestamp
+    price: course.price || '0',
+    num_lectures: course.num_lectures || 0,
+    num_subscribers: course.num_subscribers || 0,
+    num_reviews: course.num_reviews || 0,
+    is_paid: course.is_paid || false,
+    content_duration: course.content_duration || 0,
+    published_timestamp: course.published_timestamp || new Date().toISOString()
   };
 };
 
