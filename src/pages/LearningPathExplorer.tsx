@@ -17,7 +17,7 @@ import CourseCard from '@/components/CourseCard';
 const LearningPathExplorer = () => {
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [selectedPath, setSelectedPath] = useState<LearningPath | null>(null);
-  const [pathCourses, setPathCourses] = useState<(Course & { step_order: number })[]>([]);
+  const [pathCourses, setPathCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [courseLoading, setCourseLoading] = useState(false);
 
@@ -64,20 +64,75 @@ const LearningPathExplorer = () => {
           .from('learning_path_steps')
           .select(`
             step_order,
-            courses:course_id (*)
+            course_id
           `)
           .eq('learning_path_id', selectedPath.id)
           .order('step_order');
           
         if (error) throw error;
         
-        if (data) {
-          const formattedCourses = data.map(item => ({
-            ...item.courses,
-            step_order: item.step_order
-          })) as (Course & { step_order: number })[];
+        if (data && data.length > 0) {
+          // Fetch each course individually
+          const coursesList: (Course & { step_order: number })[] = [];
           
-          setPathCourses(formattedCourses);
+          for (const step of data) {
+            try {
+              // Handle both numeric and string IDs
+              let courseQuery;
+              if (typeof step.course_id === 'number') {
+                courseQuery = supabase
+                  .from('courses')
+                  .select('*')
+                  .eq('course_id', step.course_id)
+                  .maybeSingle();
+              } else if (step.course_id && /^\d+$/.test(step.course_id)) {
+                courseQuery = supabase
+                  .from('courses')
+                  .select('*')
+                  .eq('course_id', parseInt(step.course_id, 10))
+                  .maybeSingle();
+              } else {
+                courseQuery = supabase
+                  .from('courses')
+                  .select('*')
+                  .eq('id', step.course_id)
+                  .maybeSingle();
+              }
+              
+              const { data: courseData, error: courseError } = await courseQuery;
+              
+              if (!courseError && courseData) {
+                // Transform the course data
+                const transformedCourse: Course & { step_order: number } = {
+                  id: courseData.id || courseData.course_id?.toString(),
+                  course_id: courseData.course_id,
+                  title: courseData.title || courseData.course_title,
+                  course_title: courseData.course_title,
+                  description: courseData.description || courseData.subject || 'No description available',
+                  instructor: courseData.instructor || 'Instructor',
+                  thumbnail: courseData.thumbnail || courseData.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+                  duration: courseData.duration || `${Math.round((courseData.content_duration || 0) / 60)} hours`,
+                  level: courseData.level || 'Beginner',
+                  category: courseData.category || courseData.subject || 'General',
+                  rating: courseData.rating || 4.5,
+                  enrollments: courseData.enrollments || courseData.num_subscribers || 0,
+                  tags: courseData.tags || [courseData.subject || 'General'],
+                  created_at: courseData.created_at || courseData.published_timestamp || new Date().toISOString(),
+                  step_order: step.step_order
+                };
+                
+                coursesList.push(transformedCourse);
+              }
+            } catch (courseError) {
+              console.error(`Error fetching course ${step.course_id}:`, courseError);
+            }
+          }
+          
+          // Sort by step_order
+          coursesList.sort((a, b) => a.step_order - b.step_order);
+          setPathCourses(coursesList);
+        } else {
+          setPathCourses([]);
         }
       } catch (error) {
         console.error('Error fetching path courses:', error);
@@ -86,6 +141,7 @@ const LearningPathExplorer = () => {
           description: 'Failed to load courses for this learning path.',
           variant: 'destructive'
         });
+        setPathCourses([]);
       } finally {
         setCourseLoading(false);
       }

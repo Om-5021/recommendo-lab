@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Play, BookOpen, BarChart, ChevronRight, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,18 +30,17 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
     const fetchVideos = async () => {
       try {
         setLoading(true);
-        // Parse courseId to number if it's a string
-        const courseIdNumber = parseInt(courseId, 10);
-        
-        if (isNaN(courseIdNumber)) {
-          console.error('Invalid course ID:', courseId);
-          return;
+        // Parse courseId to number if it's a numeric string
+        let queryValue = courseId;
+        // Only convert to number if it's a numeric string
+        if (/^\d+$/.test(courseId)) {
+          queryValue = parseInt(courseId, 10);
         }
         
         const { data, error } = await supabase
           .from('course_videos')
           .select('*')
-          .eq('course_id', courseIdNumber);
+          .eq('course_id', queryValue);
           
         if (error) {
           throw error;

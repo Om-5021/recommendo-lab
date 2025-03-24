@@ -50,7 +50,7 @@ const Hero = () => {
       if (matchingCourses && matchingCourses.length > 0) {
         // Transform the courses to match our Course interface
         const transformedCourses: Course[] = matchingCourses.map(course => ({
-          id: course.course_id?.toString(),
+          id: course.id || course.course_id?.toString(),
           course_id: course.course_id,
           title: course.course_title,
           course_title: course.course_title,
@@ -67,91 +67,132 @@ const Hero = () => {
         }));
         
         // Find any learning paths that include these courses
-        const courseIds = transformedCourses.map(course => course.id);
+        const courseIdsForQuery = transformedCourses.map(course => {
+          // If course_id is a number, use it directly; otherwise convert string to number if possible
+          if (typeof course.course_id === 'number') {
+            return course.course_id;
+          } else if (course.course_id && /^\d+$/.test(course.course_id)) {
+            return parseInt(course.course_id, 10);
+          }
+          return course.id;
+        }).filter(id => id !== undefined);
         
-        const { data: pathSteps, error: pathError } = await supabase
-          .from('learning_path_steps')
-          .select('learning_path_id')
-          .in('course_id', courseIds);
+        if (courseIdsForQuery.length === 0) {
+          createCustomPath(transformedCourses);
+          return;
+        }
         
-        if (pathError) throw pathError;
-        
-        if (pathSteps && pathSteps.length > 0) {
-          // Get unique learning path IDs
-          const pathIds = [...new Set(pathSteps.map(step => step.learning_path_id))];
+        try {
+          // Query for learning path steps that include these courses
+          const { data: pathSteps, error: pathError } = await supabase
+            .from('learning_path_steps')
+            .select('learning_path_id')
+            .in('course_id', courseIdsForQuery);
           
-          // Get the first matching learning path with its courses
-          const { data: learningPath, error: lpError } = await supabase
-            .from('learning_paths')
-            .select('*')
-            .in('id', pathIds)
-            .limit(1)
-            .maybeSingle();
+          if (pathError) throw pathError;
           
-          if (lpError && lpError.code !== 'PGRST116') throw lpError;
-          
-          if (learningPath) {
-            // Get all courses in this learning path in order
-            const { data: orderedCourses, error: stepsError } = await supabase
-              .from('learning_path_steps')
+          if (pathSteps && pathSteps.length > 0) {
+            // Get unique learning path IDs
+            const pathIds = [...new Set(pathSteps.map(step => step.learning_path_id))];
+            
+            // Get the first matching learning path
+            const { data: learningPath, error: lpError } = await supabase
+              .from('learning_paths')
               .select('*')
-              .eq('learning_path_id', learningPath.id)
-              .order('step_order', { ascending: true });
+              .in('id', pathIds)
+              .limit(1)
+              .maybeSingle();
             
-            if (stepsError) throw stepsError;
+            if (lpError && lpError.code !== 'PGRST116') throw lpError;
             
-            if (orderedCourses && orderedCourses.length > 0) {
-              // Now fetch each course
-              const coursesList: Course[] = [];
+            if (learningPath) {
+              // Get all courses in this learning path in order
+              const { data: orderedCourses, error: stepsError } = await supabase
+                .from('learning_path_steps')
+                .select('*, course_id')
+                .eq('learning_path_id', learningPath.id)
+                .order('step_order', { ascending: true });
               
-              for (const step of orderedCourses) {
-                const { data: courseData, error: courseError } = await supabase
-                  .from('courses')
-                  .select('*')
-                  .eq('course_id', step.course_id)
-                  .maybeSingle();
+              if (stepsError) throw stepsError;
+              
+              if (orderedCourses && orderedCourses.length > 0) {
+                // Now fetch each course directly, not through relationships
+                const coursesList: Course[] = [];
                 
-                if (!courseError && courseData) {
-                  const transformedCourse: Course = {
-                    id: courseData.course_id?.toString(),
-                    course_id: courseData.course_id,
-                    title: courseData.course_title,
-                    course_title: courseData.course_title,
-                    description: courseData.subject || 'No description available',
-                    instructor: 'Instructor',
-                    thumbnail: courseData.url || 'https://via.placeholder.com/640x360?text=Course+Image',
-                    duration: `${Math.round((courseData.content_duration || 0) / 60)} hours`,
-                    level: courseData.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
-                    category: courseData.subject || 'General',
-                    rating: 4.5, // Default rating
-                    enrollments: courseData.num_subscribers || 0,
-                    tags: [courseData.subject || 'General'],
-                    created_at: courseData.published_timestamp || new Date().toISOString(),
-                  };
-                  coursesList.push(transformedCourse);
+                for (const step of orderedCourses) {
+                  try {
+                    // Handle both numeric and string IDs
+                    let courseQuery;
+                    if (typeof step.course_id === 'number') {
+                      courseQuery = supabase
+                        .from('courses')
+                        .select('*')
+                        .eq('course_id', step.course_id)
+                        .maybeSingle();
+                    } else if (step.course_id && /^\d+$/.test(step.course_id)) {
+                      courseQuery = supabase
+                        .from('courses')
+                        .select('*')
+                        .eq('course_id', parseInt(step.course_id, 10))
+                        .maybeSingle();
+                    } else {
+                      courseQuery = supabase
+                        .from('courses')
+                        .select('*')
+                        .eq('id', step.course_id)
+                        .maybeSingle();
+                    }
+                    
+                    const { data: courseData, error: courseError } = await courseQuery;
+                    
+                    if (!courseError && courseData) {
+                      const transformedCourse: Course = {
+                        id: courseData.id || courseData.course_id?.toString(),
+                        course_id: courseData.course_id,
+                        title: courseData.course_title,
+                        course_title: courseData.course_title,
+                        description: courseData.subject || 'No description available',
+                        instructor: 'Instructor',
+                        thumbnail: courseData.url || 'https://via.placeholder.com/640x360?text=Course+Image',
+                        duration: `${Math.round((courseData.content_duration || 0) / 60)} hours`,
+                        level: courseData.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
+                        category: courseData.subject || 'General',
+                        rating: 4.5, // Default rating
+                        enrollments: courseData.num_subscribers || 0,
+                        tags: [courseData.subject || 'General'],
+                        created_at: courseData.published_timestamp || new Date().toISOString(),
+                      };
+                      coursesList.push(transformedCourse);
+                    }
+                  } catch (courseError) {
+                    console.error('Error fetching course:', courseError);
+                  }
                 }
+                
+                // Format the data for display
+                const roadmap = {
+                  pathName: learningPath.title,
+                  pathDescription: learningPath.description,
+                  pathId: learningPath.id,
+                  courses: coursesList
+                };
+                
+                setRoadmapData(roadmap);
+                toast.success(`Found a learning path for "${searchQuery}"`);
+              } else {
+                // Fallback to creating a suggested path
+                createCustomPath(transformedCourses);
               }
-              
-              // Format the data for display
-              const roadmap = {
-                pathName: learningPath.title,
-                pathDescription: learningPath.description,
-                pathId: learningPath.id,
-                courses: coursesList
-              };
-              
-              setRoadmapData(roadmap);
-              toast.success(`Found a learning path for "${searchQuery}"`);
             } else {
-              // Fallback to creating a suggested path
+              // If no existing learning path, create a suggested one based on courses
               createCustomPath(transformedCourses);
             }
           } else {
-            // If no existing learning path, create a suggested one based on courses
+            // No existing paths, create a custom one
             createCustomPath(transformedCourses);
           }
-        } else {
-          // No existing paths, create a custom one
+        } catch (pathQueryError) {
+          console.error('Error querying for learning paths:', pathQueryError);
           createCustomPath(transformedCourses);
         }
       } else {

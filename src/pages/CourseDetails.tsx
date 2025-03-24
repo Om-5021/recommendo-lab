@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -46,11 +47,12 @@ const CourseDetails = () => {
         
         let query;
         if (isNumeric) {
-          // If numeric, search by course_id
+          // If numeric, search by course_id - convert to appropriate type
+          const courseIdValue = parseInt(courseId, 10);
           query = supabase
             .from('courses')
             .select('*')
-            .eq('course_id', parseInt(courseId, 10))
+            .eq('course_id', courseIdValue)
             .maybeSingle();
         } else {
           // If UUID, search by id
@@ -68,7 +70,7 @@ const CourseDetails = () => {
         }
         
         if (data) {
-          // Transform data for consistency
+          // Transform data for consistency, ensuring types are correct
           const transformedCourse: Course = {
             id: data.id || data.course_id?.toString(),
             course_id: data.course_id,
@@ -84,7 +86,6 @@ const CourseDetails = () => {
             enrollments: data.enrollments || data.num_subscribers || 0,
             tags: data.tags || [data.subject || 'General'],
             created_at: data.created_at || data.published_timestamp || new Date().toISOString(),
-            ...data
           };
           
           setCourse(transformedCourse);

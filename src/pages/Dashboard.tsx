@@ -21,7 +21,7 @@ import LevelFilteredLearningPaths from '@/components/LevelFilteredLearningPaths'
 const Dashboard = () => {
   const { session, userCourses, isLoading } = useUserProgress();
   const { user, profile } = useUser();
-  const [courses, setCourses] = useState<(Course & { progress?: number })[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
   
   // Get learning path data
@@ -43,7 +43,24 @@ const Dashboard = () => {
       try {
         if (!userCourses.length) {
           const inProgressCourses = getInProgressCourses();
-          setCourses(inProgressCourses as Course[]);
+          const dbCourses: Course[] = inProgressCourses.map(c => ({
+            id: c.id,
+            course_id: c.id,
+            course_title: c.title,
+            title: c.title,
+            description: c.description,
+            instructor: c.instructor,
+            thumbnail: c.thumbnail,
+            duration: c.duration,
+            level: c.level,
+            category: c.category,
+            rating: c.rating,
+            enrollments: c.enrollments,
+            tags: c.tags,
+            created_at: c.created_at,
+            progress: c.progress
+          }));
+          setCourses(dbCourses);
           setLoadingCourses(false);
           return;
         }
@@ -51,7 +68,7 @@ const Dashboard = () => {
         setLoadingCourses(true);
         const courseIds = userCourses.map(uc => {
           // Handle both string and number IDs
-          if (uc.course_id.match(/^\d+$/)) {
+          if (typeof uc.course_id === 'string' && uc.course_id.match(/^\d+$/)) {
             return parseInt(uc.course_id, 10);
           }
           return uc.course_id;
@@ -59,7 +76,24 @@ const Dashboard = () => {
         
         if (courseIds.length === 0) {
           const inProgressCourses = getInProgressCourses();
-          setCourses(inProgressCourses as Course[]);
+          const dbCourses: Course[] = inProgressCourses.map(c => ({
+            id: c.id,
+            course_id: c.id,
+            course_title: c.title,
+            title: c.title,
+            description: c.description,
+            instructor: c.instructor,
+            thumbnail: c.thumbnail,
+            duration: c.duration,
+            level: c.level,
+            category: c.category,
+            rating: c.rating,
+            enrollments: c.enrollments,
+            tags: c.tags,
+            created_at: c.created_at,
+            progress: c.progress
+          }));
+          setCourses(dbCourses);
           setLoadingCourses(false);
           return;
         }

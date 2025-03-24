@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Calendar, Award, Star, Loader2 } from 'lucide-react';
@@ -47,7 +46,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({
                 const video = selectedVideo || null;
                 handleSelectVideo(video || {
                   id: '', 
-                  course_id: courseId || '',
+                  course_id: courseId as string | number,
                   title: 'Introduction',
                   description: '',
                   video_url: '',
