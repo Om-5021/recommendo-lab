@@ -8,15 +8,18 @@ import { Course, LearningPath } from '@/types/database';
 import { supabase } from '@/lib/supabase';
 import { transformCourseData } from '@/utils/courseTransforms';
 
+// Fix 1: Update the RouteParams interface to make it compatible with useParams
 interface RouteParams {
+  [key: string]: string | undefined;
   pathId?: string;
 }
 
 const LearningPathExplorer = () => {
   const { pathId } = useParams<RouteParams>();
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
-  const [pathCourses, setPathCourses] = useState<Course[]>([]);
+  const [pathCourses, setPathCourses] = useState<(Course & { step_order: number })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userProgress, setUserProgress] = useState<number>(0);
 
   useEffect(() => {
     const fetchPathData = async () => {
@@ -45,6 +48,9 @@ const LearningPathExplorer = () => {
 
         if (stepsError) throw stepsError;
 
+        // Set a random progress value for demonstration purposes (in a real app, this would come from user data)
+        setUserProgress(Math.floor(Math.random() * 100));
+
         // Fetch all courses in the path
         const coursesPromises = stepsData.map(async (step) => {
           // Convert course_id to a number if it's a string number
@@ -70,11 +76,16 @@ const LearningPathExplorer = () => {
             return null;
           }
 
-          return transformCourseData(courseData);
+          // Fix 2: Add step_order to the transformed course data
+          return {
+            ...transformCourseData(courseData),
+            step_order: step.step_order
+          };
         });
 
         const courses = await Promise.all(coursesPromises);
-        setPathCourses(courses.filter(Boolean) as Course[]);
+        // Filter out null values and cast to the correct type
+        setPathCourses(courses.filter(Boolean) as (Course & { step_order: number })[]);
       } catch (error) {
         console.error('Error fetching learning path:', error);
       } finally {
@@ -98,7 +109,11 @@ const LearningPathExplorer = () => {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : learningPath ? (
-          <DetailedLearningPath path={learningPath} courses={pathCourses} />
+          <DetailedLearningPath 
+            learningPath={learningPath} 
+            courses={pathCourses} 
+            userProgress={userProgress} 
+          />
         ) : (
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold mb-4">Learning Path Not Found</h2>

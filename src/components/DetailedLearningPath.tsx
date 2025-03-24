@@ -25,7 +25,7 @@ const DetailedLearningPath: React.FC<DetailedLearningPathProps> = ({
 
   // Calculate total duration in hours
   const totalDuration = courses.reduce((total, course) => {
-    const hours = parseInt(course.duration.split(' ')[0]) || 0;
+    const hours = parseInt(course.duration?.split(' ')[0] || '0') || 0;
     return total + hours;
   }, 0);
 
@@ -89,19 +89,19 @@ const DetailedLearningPath: React.FC<DetailedLearningPathProps> = ({
                     <CardTitle className="text-lg">{course.title}</CardTitle>
                     <div className="flex items-center text-yellow-500">
                       <Star className="h-4 w-4 fill-current" />
-                      <span className="ml-1 text-sm">{course.rating.toFixed(1)}</span>
+                      <span className="ml-1 text-sm">{course.rating?.toFixed(1) || "N/A"}</span>
                     </div>
                   </div>
                   <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-2">
                   <div className="flex flex-wrap gap-2">
-                    {course.tags.slice(0, 3).map((tag) => (
+                    {course.tags?.slice(0, 3).map((tag) => (
                       <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {tag}
                       </span>
                     ))}
-                    {course.tags.length > 3 && (
+                    {course.tags && course.tags.length > 3 && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         +{course.tags.length - 3} more
                       </span>
