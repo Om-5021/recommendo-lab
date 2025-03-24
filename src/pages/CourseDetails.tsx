@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -8,7 +9,7 @@ import { useSession } from '@/contexts/SessionContext';
 import { useToast } from '@/components/ui/use-toast';
 import CourseVideos from '@/components/CourseVideos';
 import CourseSidebar from '@/components/course-details/CourseSidebar';
-import VideoPlayer from '@/components/VideoPlayer';
+import VideoPlayer from '@/components/video-player/VideoPlayer';
 import { supabase } from '@/lib/supabase';
 import { transformCourseData } from '@/utils/courseTransforms';
 
@@ -48,6 +49,10 @@ const CourseDetails = () => {
     
       // Convert courseId to number if it's a numeric string
       let queryValue: number;
+      if (!courseId) {
+        throw new Error('Course ID is missing');
+      }
+      
       if (/^\d+$/.test(courseId)) {
         queryValue = parseInt(courseId, 10);
       } else {
@@ -100,7 +105,11 @@ const CourseDetails = () => {
         throw error;
       }
 
-      setSimilarCourses(data as Course[]);
+      if (data) {
+        // Transform the data
+        const transformedCourses = data.map(course => transformCourseData(course));
+        setSimilarCourses(transformedCourses);
+      }
     } catch (error) {
       console.error('Error fetching similar courses:', error);
       toast({
@@ -129,10 +138,10 @@ const CourseDetails = () => {
     <div className="container py-12">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <VideoPlayer videoUrl={selectedVideo?.video_url || course.url || ''} />
+          <VideoPlayer src={selectedVideo?.video_url || course?.url || ''} />
           <div className="mt-6">
-            <h1 className="text-3xl font-bold">{course.title}</h1>
-            <p className="text-muted-foreground mt-2">{course.description}</p>
+            <h1 className="text-3xl font-bold">{course?.title}</h1>
+            <p className="text-muted-foreground mt-2">{course?.description}</p>
           </div>
           <div className="mt-8">
             <CourseVideos courseId={courseId} onSelectVideo={handleSelectVideo} />
@@ -140,7 +149,7 @@ const CourseDetails = () => {
         </div>
         <div className="lg:col-span-1">
           <CourseSidebar
-            course={course}
+            course={course as Course}
             courseProgress={courseProgress}
             userCourse={userCourse}
             selectedVideo={selectedVideo}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Play, BookOpen, BarChart, ChevronRight, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,11 +63,21 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
             title: video.course_title || `Video ${index + 1}`,
             description: video.subject || 'No description available',
             video_url: video.url || 'https://example.com/video.mp4',
-            duration: `${Math.round((video.content_duration || 0) / 60)} min`,
+            duration: video.content_duration ? `${Math.round(video.content_duration / 60)} min` : '0 min',
             order_index: index,
             created_at: video.published_timestamp || new Date().toISOString(),
-            // Include all original fields too
-            ...video
+            // Include all original fields
+            course_title: video.course_title,
+            subject: video.subject,
+            price: video.price,
+            level: video.level,
+            is_paid: video.is_paid,
+            num_subscribers: video.num_subscribers,
+            num_reviews: video.num_reviews,
+            num_lectures: video.num_lectures,
+            content_duration: video.content_duration,
+            published_timestamp: video.published_timestamp,
+            url: video.url
           }));
           
           setVideos(transformedVideos);

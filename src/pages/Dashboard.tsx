@@ -8,9 +8,32 @@ import { useToast } from '@/components/ui/use-toast';
 import { useUser } from '@/hooks/useUser';
 import { Course } from '@/types/database';
 import { supabase } from '@/lib/supabase';
-import { mockRecommendedCourses } from '@/lib/data';
 import Navbar from '@/components/Navbar';
 import { transformCourseData } from '@/utils/courseTransforms';
+
+const mockRecommendedCourses = [
+  {
+    id: '1',
+    title: 'Introduction to JavaScript',
+    description: 'Learn the basics of JavaScript programming',
+    level: 'Beginner',
+    progress: 0
+  },
+  {
+    id: '2',
+    title: 'React Fundamentals',
+    description: 'Building user interfaces with React',
+    level: 'Intermediate',
+    progress: 0
+  },
+  {
+    id: '3',
+    title: 'Advanced CSS Techniques',
+    description: 'Master modern CSS layouts and animations',
+    level: 'Advanced',
+    progress: 0
+  }
+];
 
 const Dashboard = () => {
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
