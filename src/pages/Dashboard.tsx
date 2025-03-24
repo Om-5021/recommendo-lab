@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, GraduationCap, PlusCircle, Loader2 } from 'lucide-react';
@@ -5,107 +6,134 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
-import { useUser } from '@/hooks/useUser';
-import { Course } from '@/types/database';
+import { useSession } from '@/hooks/useSession';
 import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import { transformCourseData } from '@/utils/courseTransforms';
+import { Course } from '@/types/database';
 
-const mockRecommendedCourses = [
-  {
-    id: '1',
-    title: 'Introduction to JavaScript',
-    description: 'Learn the basics of JavaScript programming',
-    level: 'Beginner',
-    progress: 0
-  },
-  {
-    id: '2',
-    title: 'React Fundamentals',
-    description: 'Building user interfaces with React',
-    level: 'Intermediate',
-    progress: 0
-  },
-  {
-    id: '3',
-    title: 'Advanced CSS Techniques',
-    description: 'Master modern CSS layouts and animations',
-    level: 'Advanced',
-    progress: 0
-  }
-];
+// Import mock data for fallback
+import { mockCourses } from '@/lib/data';
 
 const Dashboard = () => {
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
-  const { profile, loadingProfile } = useUser();
+  const { userId, isLoading: loadingProfile } = useSession();
   const { toast } = useToast();
 
   useEffect(() => {
     if (!loadingProfile) {
       fetchCourses();
     }
-  }, [profile, loadingProfile, toast]);
+  }, [userId, loadingProfile]);
 
   const fetchCourses = async () => {
     try {
       setLoadingCourses(true);
-      if (!profile?.id) return;
-      
+
+      if (!userId) {
+        // Use mock data if user is not logged in
+        const mockTransformedCourses = mockCourses.map(mockCourse => ({
+          course_id: parseInt(mockCourse.id, 10),
+          course_title: mockCourse.title,
+          title: mockCourse.title,
+          description: mockCourse.description,
+          instructor: mockCourse.instructor,
+          thumbnail: mockCourse.thumbnail,
+          duration: mockCourse.duration,
+          level: mockCourse.level,
+          category: mockCourse.category,
+          rating: mockCourse.rating,
+          enrollments: mockCourse.enrollments,
+          tags: mockCourse.tags,
+          preview: mockCourse.preview,
+          created_at: mockCourse.created_at,
+          progress: 30 // Default progress for mock data
+        }));
+
+        setEnrolledCourses(mockTransformedCourses);
+        setLoadingCourses(false);
+        return;
+      }
+
       // First get the user's course progress
       const { data: userCoursesData, error: userCoursesError } = await supabase
         .from('user_courses')
         .select('*')
-        .eq('user_id', profile.id);
-        
+        .eq('user_id', userId);
+
       if (userCoursesError) throw userCoursesError;
-      
+
       // Get the course ids from user progress
       const courseIds = userCoursesData?.map(uc => uc.course_id) || [];
-      
+
       if (courseIds.length === 0) {
         // If no courses found, use mock data for now
-        const mockCourses: Course[] = mockRecommendedCourses.map(mockCourse => ({
-          ...mockCourse,
+        const mockTransformedCourses = mockCourses.map(mockCourse => ({
           course_id: parseInt(mockCourse.id, 10),
-          course_title: mockCourse.title || ''
+          course_title: mockCourse.title,
+          title: mockCourse.title,
+          description: mockCourse.description, 
+          instructor: mockCourse.instructor,
+          thumbnail: mockCourse.thumbnail,
+          duration: mockCourse.duration,
+          level: mockCourse.level,
+          category: mockCourse.category,
+          rating: mockCourse.rating,
+          enrollments: mockCourse.enrollments,
+          tags: mockCourse.tags,
+          preview: mockCourse.preview,
+          created_at: mockCourse.created_at,
+          progress: 30 // Default progress for mock data
         }));
-        setEnrolledCourses(mockCourses);
+
+        setEnrolledCourses(mockTransformedCourses);
         setLoadingCourses(false);
         return;
       }
-      
+
       // Get the actual course data from Supabase
       const promises = courseIds.map(async (courseId) => {
-        // Handle both string and number course IDs
-        const parsedCourseId = typeof courseId === 'string' && /^\d+$/.test(courseId) 
-          ? parseInt(courseId, 10) 
-          : courseId;
-          
+        // Parse courseId to number for the Supabase query
+        let parsedCourseId: number;
+        
+        if (typeof courseId === 'string' && /^\d+$/.test(courseId)) {
+          parsedCourseId = parseInt(courseId, 10);
+        } else if (typeof courseId === 'number') {
+          parsedCourseId = courseId;
+        } else {
+          console.error('Invalid course ID format:', courseId);
+          return null;
+        }
+
         const { data, error } = await supabase
           .from('courses')
           .select('*')
           .eq('course_id', parsedCourseId)
           .maybeSingle();
-          
+
         if (error) {
           console.error('Error fetching course:', error);
           return null;
         }
-        
+
         if (!data) return null;
-        
+
         // Get progress from user_courses
-        const userCourse = userCoursesData?.find(uc => uc.course_id === courseId);
+        const userCourse = userCoursesData?.find(uc => 
+          uc.course_id === courseId ||
+          uc.course_id === parsedCourseId.toString()
+        );
         const progress = userCourse?.progress || 0;
-        
-        // Transform data to match our Course interface
-        return { 
-          ...transformCourseData(data),
+
+        // Transform data to match our Course interface and add progress
+        const transformedCourse = transformCourseData(data);
+        return {
+          ...transformedCourse,
           progress
         };
       });
-      
+
       const courses = await Promise.all(promises);
       setEnrolledCourses(courses.filter(Boolean) as Course[]);
     } catch (error) {

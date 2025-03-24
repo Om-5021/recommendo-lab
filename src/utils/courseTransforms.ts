@@ -1,4 +1,3 @@
-
 import { Course, CourseVideo } from '@/types/database';
 
 /**
@@ -13,7 +12,7 @@ export const transformCourseData = (course: any): Course => {
     description: course.subject || 'No description available',
     instructor: 'Instructor',
     thumbnail: course.url || 'https://via.placeholder.com/640x360?text=Course+Image',
-    duration: `${Math.round((course.content_duration || 0) / 60)} hours`,
+    duration: `${Math.round(((course.content_duration || 0) / 60))} hours`,
     level: course.level as 'Beginner' | 'Intermediate' | 'Advanced' || 'Beginner',
     category: course.subject || 'General',
     rating: 4.5, // Default rating
@@ -43,20 +42,12 @@ export const transformVideoData = (video: any, index: number): CourseVideo => {
     title: video.course_title || `Video ${index + 1}`,
     description: video.subject || 'No description available',
     video_url: video.url || 'https://example.com/video.mp4',
-    duration: `${Math.round((video.content_duration || 0) / 60)} min`,
+    duration: '10 min', // Default duration
     order_index: index,
-    created_at: video.published_timestamp || new Date().toISOString(),
-    // Include all original fields too
+    created_at: new Date().toISOString(),
+    // Include fields that exist in the database
     course_title: video.course_title,
     subject: video.subject,
-    price: video.price,
-    level: video.level,
-    is_paid: video.is_paid,
-    num_subscribers: video.num_subscribers,
-    num_reviews: video.num_reviews,
-    num_lectures: video.num_lectures,
-    content_duration: video.content_duration,
-    published_timestamp: video.published_timestamp,
     url: video.url
   };
 };

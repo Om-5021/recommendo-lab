@@ -1,158 +1,113 @@
+
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
+import { useParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import DetailedLearningPath from '@/components/DetailedLearningPath';
+import { Course, LearningPath } from '@/types/database';
 import { supabase } from '@/lib/supabase';
-import { LearningPath } from '@/types/database';
 import { transformCourseData } from '@/utils/courseTransforms';
 
+interface RouteParams {
+  pathId?: string;
+}
+
 const LearningPathExplorer = () => {
-  const [paths, setPaths] = useState<any[]>([]);
+  const { pathId } = useParams<RouteParams>();
+  const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
+  const [pathCourses, setPathCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
-    fetchPathsWithCourses();
-  }, []);
+    const fetchPathData = async () => {
+      setIsLoading(true);
+      try {
+        if (!pathId) {
+          throw new Error('Path ID is required');
+        }
 
-  const fetchPathsWithCourses = async () => {
-    setIsLoading(true);
-    try {
-      // Fetch learning paths
-      const { data: pathsData, error: pathsError } = await supabase
-        .from('learning_paths')
-        .select('*');
-        
-      if (pathsError) throw pathsError;
-      
-      // For each path, fetch its steps and courses separately
-      const pathsWithCourses = await Promise.all(
-        (pathsData || []).map(async (path) => {
-          // Fetch the steps for this path
-          const { data: stepsData, error: stepsError } = await supabase
-            .from('learning_path_steps')
+        // Fetch learning path data
+        const { data: pathData, error: pathError } = await supabase
+          .from('learning_paths')
+          .select('*')
+          .eq('id', pathId)
+          .single();
+
+        if (pathError) throw pathError;
+        setLearningPath(pathData);
+
+        // Fetch path steps to get the courses in the correct order
+        const { data: stepsData, error: stepsError } = await supabase
+          .from('learning_path_steps')
+          .select('*')
+          .eq('learning_path_id', pathId)
+          .order('step_order', { ascending: true });
+
+        if (stepsError) throw stepsError;
+
+        // Fetch all courses in the path
+        const coursesPromises = stepsData.map(async (step) => {
+          // Convert course_id to a number if it's a string number
+          let courseId: number;
+          
+          if (typeof step.course_id === 'string' && /^\d+$/.test(step.course_id)) {
+            courseId = parseInt(step.course_id, 10);
+          } else if (typeof step.course_id === 'number') {
+            courseId = step.course_id;
+          } else {
+            console.error('Invalid course ID format:', step.course_id);
+            return null;
+          }
+
+          const { data: courseData, error: courseError } = await supabase
+            .from('courses')
             .select('*')
-            .eq('learning_path_id', path.id)
-            .order('step_order', { ascending: true });
-          
-          if (stepsError) {
-            console.error('Error fetching path steps:', stepsError);
-            return { ...path, steps: [] };
+            .eq('course_id', courseId)
+            .single();
+
+          if (courseError) {
+            console.error('Error fetching course:', courseError);
+            return null;
           }
-          
-          if (!stepsData || stepsData.length === 0) {
-            return { ...path, steps: [] };
-          }
-          
-          // Fetch each course separately
-          const stepsWithCourses = await Promise.all(
-            stepsData.map(async (step) => {
-              // Handle numeric course IDs
-              const parsedCourseId = typeof step.course_id === 'string' && /^\d+$/.test(step.course_id)
-                ? parseInt(step.course_id, 10)
-                : step.course_id;
-              
-              const { data: courseData, error: courseError } = await supabase
-                .from('courses')
-                .select('*')
-                .eq('course_id', parsedCourseId)
-                .maybeSingle();
-              
-              if (courseError || !courseData) {
-                console.error('Error fetching course for step:', courseError);
-                return { ...step, course: null };
-              }
-              
-              // Transform to our Course type
-              const transformedCourse = transformCourseData(courseData);
-              
-              return {
-                ...step,
-                course: transformedCourse,
-                step_order: step.step_order // Ensure step_order is included
-              };
-            })
-          );
-          
-          return {
-            ...path,
-            steps: stepsWithCourses
-          };
-        })
-      );
-      
-      setPaths(pathsWithCourses);
-    } catch (error) {
-      console.error('Error fetching learning paths with courses:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load learning paths',
-        variant: 'destructive'
-      });
-    } finally {
+
+          return transformCourseData(courseData);
+        });
+
+        const courses = await Promise.all(coursesPromises);
+        setPathCourses(courses.filter(Boolean) as Course[]);
+      } catch (error) {
+        console.error('Error fetching learning path:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (pathId) {
+      fetchPathData();
+    } else {
       setIsLoading(false);
     }
-  };
+  }, [pathId]);
 
   return (
-    <div className="container py-12">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Explore Learning Paths</h1>
-        <Button asChild>
-          <Link to="/create-learning-path" className="flex items-center">
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Path
-          </Link>
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-          <span>Loading learning paths...</span>
-        </div>
-      ) : paths.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">No learning paths found. Create one to get started!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paths.map((path) => (
-            <Card key={path.id} className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold line-clamp-1 dark:text-white">{path.title}</CardTitle>
-                <CardDescription className="text-sm text-muted-foreground line-clamp-2 dark:text-gray-400">{path.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="p-4">
-                <h4 className="text-sm font-semibold mb-2 dark:text-gray-300">Courses:</h4>
-                <ul className="space-y-2">
-                  {path.steps.map((step, index) => (
-                    <li key={step.id} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Badge className="mr-2">{index + 1}</Badge>
-                        <Link to={`/course/${step.course?.id}`} className="hover:underline line-clamp-1 dark:text-white">
-                          {step.course?.title}
-                        </Link>
-                      </div>
-                      <span className="text-xs text-muted-foreground dark:text-gray-400">Step {step.step_order}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter className="p-4">
-                <Button asChild variant="outline">
-                  <Link to={`/learning-path/${path.id}`} className="w-full text-center">
-                    View Path
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main className="container mx-auto px-4 py-24">
+        {isLoading ? (
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        ) : learningPath ? (
+          <DetailedLearningPath path={learningPath} courses={pathCourses} />
+        ) : (
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">Learning Path Not Found</h2>
+            <p className="text-muted-foreground">
+              Sorry, we couldn't find the learning path you're looking for.
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 // Type definitions for database tables
 
 export interface Course {
@@ -31,7 +30,7 @@ export interface Course {
 }
 
 export interface CourseVideo {
-  id?: string;
+  id: string;
   course_id: number; // Standardizing to number format based on Supabase structure
   title?: string;
   description?: string;
@@ -39,18 +38,10 @@ export interface CourseVideo {
   duration?: string;
   order_index?: number;
   created_at?: string;
-  // Backend specific fields
-  course_title?: string;
-  subject?: string;
-  price?: string;
-  level?: string;
-  is_paid?: boolean;
-  num_subscribers?: number;
-  num_reviews?: number;
-  num_lectures?: number;
-  content_duration?: number;
-  published_timestamp?: string;
-  url?: string;
+  // Include only the fields that are actually in the database
+  course_title?: string | null;
+  subject?: string | null;
+  url?: string | null;
 }
 
 export interface UserProgress {

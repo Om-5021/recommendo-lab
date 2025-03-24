@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Play, BookOpen, BarChart, ChevronRight, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,14 @@ import { cn } from '@/lib/utils';
 interface CourseVideosProps {
   courseId: string;
   onSelectVideo?: (video: CourseVideo) => void;
+}
+
+// Define a type that matches exactly what's returned from the course_videos table
+interface CourseVideoData {
+  course_id: number;
+  course_title: string | null;
+  subject: string | null;
+  url: string | null;
 }
 
 const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) => {
@@ -57,26 +66,18 @@ const CourseVideos: React.FC<CourseVideosProps> = ({ courseId, onSelectVideo }) 
         
         if (data) {
           // Transform the data to match our CourseVideo interface
-          const transformedVideos: CourseVideo[] = data.map((video, index) => ({
+          const transformedVideos: CourseVideo[] = data.map((video: CourseVideoData, index) => ({
             id: `${video.course_id}-${index}`,
             course_id: video.course_id,
             title: video.course_title || `Video ${index + 1}`,
             description: video.subject || 'No description available',
             video_url: video.url || 'https://example.com/video.mp4',
-            duration: video.content_duration ? `${Math.round(video.content_duration / 60)} min` : '0 min',
+            duration: '0 min', // Default duration since it's not in the DB
             order_index: index,
-            created_at: video.published_timestamp || new Date().toISOString(),
-            // Include all original fields
+            created_at: new Date().toISOString(),
+            // Only include fields that exist in the DB to avoid TypeScript errors
             course_title: video.course_title,
             subject: video.subject,
-            price: video.price,
-            level: video.level,
-            is_paid: video.is_paid,
-            num_subscribers: video.num_subscribers,
-            num_reviews: video.num_reviews,
-            num_lectures: video.num_lectures,
-            content_duration: video.content_duration,
-            published_timestamp: video.published_timestamp,
             url: video.url
           }));
           

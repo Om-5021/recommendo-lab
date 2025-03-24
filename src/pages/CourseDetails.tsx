@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 
 import { Course, CourseVideo } from '@/types/database';
 import { useUserProgress } from '@/contexts/UserProgressContext';
-import { useSession } from '@/contexts/SessionContext';
+import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/components/ui/use-toast';
 import CourseVideos from '@/components/CourseVideos';
 import CourseSidebar from '@/components/course-details/CourseSidebar';
@@ -48,11 +48,11 @@ const CourseDetails = () => {
       setLoading(true);
     
       // Convert courseId to number if it's a numeric string
-      let queryValue: number;
       if (!courseId) {
         throw new Error('Course ID is missing');
       }
       
+      let queryValue: number;
       if (/^\d+$/.test(courseId)) {
         queryValue = parseInt(courseId, 10);
       } else {
@@ -138,7 +138,18 @@ const CourseDetails = () => {
     <div className="container py-12">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <VideoPlayer src={selectedVideo?.video_url || course?.url || ''} />
+          {selectedVideo ? (
+            <VideoPlayer
+              video={selectedVideo}
+              courseId={courseId}
+              totalVideos={1}
+            />
+          ) : (
+            // Fallback to showing a static image or message when no video is selected
+            <div className="aspect-video bg-secondary flex items-center justify-center rounded-lg">
+              <p className="text-muted-foreground">Select a video to start watching</p>
+            </div>
+          )}
           <div className="mt-6">
             <h1 className="text-3xl font-bold">{course?.title}</h1>
             <p className="text-muted-foreground mt-2">{course?.description}</p>
