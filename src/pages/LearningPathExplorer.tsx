@@ -6,9 +6,10 @@ import Navbar from '@/components/Navbar';
 import DetailedLearningPath from '@/components/DetailedLearningPath';
 import { Course, LearningPath } from '@/types/database';
 import { supabase } from '@/lib/supabase';
-import { transformCourseData } from '@/utils/courseTransforms';
+import { transformCourseData, parseCourseId } from '@/utils/courseTransforms';
+import { useToast } from '@/components/ui/use-toast';
 
-// Fix 1: Update the RouteParams interface to make it compatible with useParams
+// Updated RouteParams interface with index signature to satisfy the constraint
 interface RouteParams {
   [key: string]: string | undefined;
   pathId?: string;
@@ -20,6 +21,7 @@ const LearningPathExplorer = () => {
   const [pathCourses, setPathCourses] = useState<(Course & { step_order: number })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userProgress, setUserProgress] = useState<number>(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchPathData = async () => {
@@ -29,6 +31,8 @@ const LearningPathExplorer = () => {
           throw new Error('Path ID is required');
         }
 
+        console.log('Fetching learning path data for path ID:', pathId);
+
         // Fetch learning path data
         const { data: pathData, error: pathError } = await supabase
           .from('learning_paths')
@@ -36,8 +40,13 @@ const LearningPathExplorer = () => {
           .eq('id', pathId)
           .single();
 
-        if (pathError) throw pathError;
+        if (pathError) {
+          console.error('Error fetching learning path:', pathError);
+          throw pathError;
+        }
+        
         setLearningPath(pathData);
+        console.log('Learning path data fetched:', pathData);
 
         // Fetch path steps to get the courses in the correct order
         const { data: stepsData, error: stepsError } = await supabase
@@ -46,24 +55,27 @@ const LearningPathExplorer = () => {
           .eq('learning_path_id', pathId)
           .order('step_order', { ascending: true });
 
-        if (stepsError) throw stepsError;
+        if (stepsError) {
+          console.error('Error fetching learning path steps:', stepsError);
+          throw stepsError;
+        }
+
+        console.log('Learning path steps fetched:', stepsData);
 
         // Set a random progress value for demonstration purposes (in a real app, this would come from user data)
         setUserProgress(Math.floor(Math.random() * 100));
 
         // Fetch all courses in the path
         const coursesPromises = stepsData.map(async (step) => {
-          // Convert course_id to a number if it's a string number
-          let courseId: number;
+          // Ensure course_id is properly parsed to a number
+          const courseId = parseCourseId(step.course_id);
           
-          if (typeof step.course_id === 'string' && /^\d+$/.test(step.course_id)) {
-            courseId = parseInt(step.course_id, 10);
-          } else if (typeof step.course_id === 'number') {
-            courseId = step.course_id;
-          } else {
-            console.error('Invalid course ID format:', step.course_id);
+          if (courseId === null) {
+            console.error('Invalid course ID in step:', step);
             return null;
           }
+
+          console.log('Fetching course with ID:', courseId);
 
           const { data: courseData, error: courseError } = await supabase
             .from('courses')
@@ -72,11 +84,13 @@ const LearningPathExplorer = () => {
             .single();
 
           if (courseError) {
-            console.error('Error fetching course:', courseError);
+            console.error('Error fetching course:', courseError, 'for course ID:', courseId);
             return null;
           }
 
-          // Fix 2: Add step_order to the transformed course data
+          console.log('Course data fetched:', courseData);
+
+          // Transform course data and add step_order
           return {
             ...transformCourseData(courseData),
             step_order: step.step_order
@@ -85,9 +99,16 @@ const LearningPathExplorer = () => {
 
         const courses = await Promise.all(coursesPromises);
         // Filter out null values and cast to the correct type
-        setPathCourses(courses.filter(Boolean) as (Course & { step_order: number })[]);
+        const validCourses = courses.filter(Boolean) as (Course & { step_order: number })[];
+        console.log('Processed courses:', validCourses);
+        setPathCourses(validCourses);
       } catch (error) {
-        console.error('Error fetching learning path:', error);
+        console.error('Error fetching learning path details:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error loading learning path',
+          description: 'Could not load the learning path. Please try again later.',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -98,7 +119,7 @@ const LearningPathExplorer = () => {
     } else {
       setIsLoading(false);
     }
-  }, [pathId]);
+  }, [pathId, toast]);
 
   return (
     <div className="min-h-screen bg-background">

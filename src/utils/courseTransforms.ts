@@ -1,12 +1,33 @@
+
 import { Course, CourseVideo } from '@/types/database';
 
 /**
  * Transforms raw course data from the Supabase database to match our Course interface
  */
 export const transformCourseData = (course: any): Course => {
+  if (!course) {
+    console.error('No course data provided to transformCourseData');
+    return {
+      id: '0',
+      course_id: 0,
+      title: 'Unknown Course',
+      course_title: 'Unknown Course',
+      description: 'No description available',
+      instructor: 'Unknown Instructor',
+      thumbnail: 'https://via.placeholder.com/640x360?text=Course+Image',
+      duration: '0 hours',
+      level: 'Beginner',
+      category: 'General',
+      rating: 0,
+      enrollments: 0,
+      tags: ['General'],
+      created_at: new Date().toISOString()
+    };
+  }
+
   return {
     id: String(course.course_id),
-    course_id: course.course_id,
+    course_id: typeof course.course_id === 'string' ? parseInt(course.course_id, 10) : course.course_id,
     title: course.course_title || 'Untitled Course',
     course_title: course.course_title || 'Untitled Course',
     description: course.subject || 'No description available',
@@ -36,9 +57,23 @@ export const transformCourseData = (course: any): Course => {
  * Transforms raw video data from the Supabase database to match our CourseVideo interface
  */
 export const transformVideoData = (video: any, index: number): CourseVideo => {
+  if (!video) {
+    console.error('No video data provided to transformVideoData');
+    return {
+      id: `unknown-${index}`,
+      course_id: 0,
+      title: `Video ${index + 1}`,
+      description: 'No description available',
+      video_url: 'https://example.com/video.mp4',
+      duration: '10 min',
+      order_index: index,
+      created_at: new Date().toISOString()
+    };
+  }
+
   return {
     id: `${video.course_id}-${index}`,
-    course_id: video.course_id,
+    course_id: typeof video.course_id === 'string' ? parseInt(video.course_id, 10) : video.course_id,
     title: video.course_title || `Video ${index + 1}`,
     description: video.subject || 'No description available',
     video_url: video.url || 'https://example.com/video.mp4',
@@ -58,7 +93,7 @@ export const transformVideoData = (video: any, index: number): CourseVideo => {
 export const parseCourseId = (courseId: string | number): number | null => {
   if (typeof courseId === 'number') return courseId;
   
-  if (/^\d+$/.test(courseId.toString())) {
+  if (courseId && /^\d+$/.test(courseId.toString())) {
     return parseInt(courseId.toString(), 10);
   }
   
@@ -71,4 +106,16 @@ export const parseCourseId = (courseId: string | number): number | null => {
  */
 export const formatCourseIdForUrl = (course: Course): string => {
   return String(course.id || course.course_id);
+};
+
+/**
+ * Safely access course properties with fallbacks
+ */
+export const getCourseProperty = <T>(
+  course: Course | null | undefined,
+  property: keyof Course,
+  fallback: T
+): T => {
+  if (!course) return fallback;
+  return (course[property] as unknown as T) || fallback;
 };
