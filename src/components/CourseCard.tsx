@@ -6,13 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Star, Clock, BookOpen } from 'lucide-react';
 import { Course } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 
 interface CourseCardProps {
   course: Course;
   className?: string;
+  progress?: number;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ course, className }) => {
+const CourseCard: React.FC<CourseCardProps> = ({ course, className, progress }) => {
   if (!course) {
     console.error('No course data provided to CourseCard');
     return null;
@@ -58,6 +60,15 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, className }) => {
       </CardHeader>
       
       <CardContent className="p-4 pt-2">
+        {progress !== undefined && (
+          <div className="mt-2 mb-2">
+            <div className="flex justify-between items-center mb-1 text-xs text-muted-foreground">
+              <span>Progress</span>
+              <span>{progress}%</span>
+            </div>
+            <Progress value={progress} className="h-1.5" />
+          </div>
+        )}
         <div className="flex flex-wrap gap-1 mt-2">
           {course.tags && course.tags.slice(0, 2).map((tag, index) => (
             <span 
